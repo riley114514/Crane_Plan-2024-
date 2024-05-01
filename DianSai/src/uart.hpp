@@ -31,7 +31,7 @@ public:
         if(serial == NULL)
             return Uart_Command_Error;
         this->Uart_Serial = serial;
-        this->Uart_Serial->begin(115200,SERIAL_8N1,12,13);
+        this->Uart_Serial->begin(115200);
         return Uart_Command_Success;
     }
 /*
@@ -53,23 +53,23 @@ public:
 /*
     向nano发送命令
 */
-    void Serial_Send(uint8_t *data, int length, bool need_delay = true)
+    void Serial_Send(uint8_t *data, int length, bool need_delay = false)
     {
         for (int i = 0; i < length; i++)
         {
             this->Uart_Serial->write(data[i]);
         }
         if(need_delay)
-            delay(1);
+            delay(10);
     }
 
 /*
     接收nano命令
 */
-    Uart_Command_Status Serial_Receive(uint8_t *Buffer, int length, bool need_delay = true)
+    Uart_Command_Status Serial_Receive(uint8_t *Buffer, int length, bool need_delay = false)
     {
         if(need_delay)
-            delay(1);
+            delay(10);
         for (int i = 0; i < Max_Wait_Time; i++)
         {
             if (this->Uart_Serial->available())
