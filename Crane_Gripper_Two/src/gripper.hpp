@@ -143,6 +143,55 @@ public:
     }
 
     /**
+     * @brief 机械爪处于静止状态函数
+     * 
+     * @param 无
+     * 
+     * @return None
+     */
+    void Gripper_Move_Stop()
+    {
+        this->Steeping42_Motor_1->Stop_Instance();
+        this->Steeping42_Motor_2->Stop_Instance();
+    }
+
+    /**
+     * @brief 机械爪开始执行夹取任务，注意，再夹取完成后，直接移动到要放置的y坐标处。
+     * 
+     * @param 无
+     * 
+     * @return None
+     */
+    void Gripper_Start_To_Pick()
+    {
+
+    }
+
+    /**
+     * @brief 机械爪开始执行放置任务
+     * 
+     * @param 无
+     * 
+     * @return None
+     */
+    void Gripper_Start_To_Set()
+    {
+
+    }
+
+    /**
+     * @brief 机械爪开始执行扫描前位置定位函数，移动到一定高度，防止机械爪与地面摩擦
+     * 
+     * @param 无
+     * 
+     * @return None
+     */
+    void Gripper_Start_To_Scan()
+    {
+
+    }
+
+    /**
      * @brief 框架循环检测当前位置
      * 
      * @param 无
