@@ -58,6 +58,19 @@ public:
     }
 
     /**
+     * @brief 控制框架保持不动
+     * 
+     * @param 无
+     * 
+     * @return None
+     */
+    void Framework_Move_Stop()
+    {
+        this->Steeping42_Motor_1->Stop_Instance();
+        this->Steeping42_Motor_2->Stop_Instance();
+    }
+
+    /**
      * @brief 用于开机复位：回到赛题指定位置
      * 
      * @param 无
@@ -99,6 +112,7 @@ public:
         while (abs(target_location - this->Current_Location) > 3)
             delay(1);
     }
+
 
     /**
      * @brief 框架循环检测当前位置
