@@ -4,12 +4,27 @@
 #include <Arduino.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#include "state.hpp"
+#include "framework.hpp"
 
 #define Header 0x55
 #define Rear 0x6B
 
-extern State state_machine;
+extern Framework framework;
+
+// 状态机的状态表示声明
+#define move_stop 0
+#define move_forward 1
+#define move_backward 2
+#define gripper_one_pick_work 4
+#define gripper_two_pick_work 5
+#define gripper_together_pick_work 6
+#define gripper_one_set_work 7
+#define gripper_two_set_work 8
+#define gripper_together_set_work 9
+#define gripper_back_to_location 10
+#define framework_back_to_location 11
+#define start_scan 12
+#define move_to_set_location 13
 
 // uint8_t broadcastAddress_1[] = {0xC8, 0x2E, 0x18, 0xF7, 0x53, 0xE8};
 uint8_t broadcastAddress_F[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // 广播模式
@@ -286,21 +301,21 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
             switch (receive_data[4])
             {
             case 0x11:
-                state_machine.Pick_Finish_Num++;
-                if(state_machine.Pick_Finish_Num == state_machine.Pick_Num)
+                framework.Pick_Finish_Num++;
+                if(framework.Pick_Finish_Num == framework.Pick_Num)
                 {
-                    state_machine.Status = move_to_set_location;
-                    state_machine.Pick_Finish_Num = 0;
+                    framework.Framework_Status = move_to_set_location;
+                    framework.Pick_Finish_Num = 0;
                 }
                 break;
 
             case 0x12:
-                state_machine.Set_Finish_Num++;
-                if(state_machine.Set_Finish_Num == state_machine.Set_Num)
+                framework.Set_Finish_Num++;
+                if(framework.Set_Finish_Num == framework.Set_Num)
                 {
-                    state_machine.Status = start_scan;
-                    state_machine.Weight_Num -= state_machine.Set_Finish_Num;
-                    state_machine.Set_Finish_Num = 0;
+                    framework.Framework_Status = start_scan;
+                    framework.Weight_Num -= framework.Set_Finish_Num;
+                    framework.Set_Finish_Num = 0;
                 }
                 break;
 

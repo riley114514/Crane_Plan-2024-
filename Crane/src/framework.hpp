@@ -7,6 +7,9 @@
 #define Length_mm 3960 // 框架可移动长度距离: 3960 mm
 #define Width_mm 1960 // 框架可移动宽度距离: 1960 mm
 
+void Task_Get_Location(void *prfrk);
+
+
 class Framework
 {
 public:
@@ -32,7 +35,13 @@ public:
         this->Steeping42_Motor_1->Clear_All();
         this->Steeping42_Motor_2->Clear_All();
         Target_Location = 0;
-        Current_Location = 0;
+        Current_Location = 120;
+        Framework_Status = 0;
+        Pick_Num = 0;
+        Set_Num = 0;
+        Pick_Finish_Num = 0;
+        Set_Finish_Num = 0;
+        Weight_Num = 5;
     }
 
     /**
@@ -130,7 +139,12 @@ public:
     Steeping42 *Steeping42_Motor_2;
     float Target_Location;
     float Current_Location;
-        
+    uint8_t Framework_Status;
+    uint8_t Pick_Num;
+    uint8_t Pick_Finish_Num;
+    uint8_t Set_Num;
+    uint8_t Set_Finish_Num;
+    uint8_t Weight_Num;
 private:
     /* data */
 };
