@@ -4,12 +4,20 @@
 #include <Arduino.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#include "state.hpp"
+#include "gripper.hpp"
 
 #define Header 0x55
 #define Rear 0x6B
 
-extern State state_machine;
+extern Gripper gripper_two;
+
+//状态机状态定义
+#define move_stop 0
+#define start_to_pick 1
+#define start_to_set 2
+#define start_to_scan 3
+#define back_to_init 4
+#define set_to_init 5
 
 
 // uint8_t broadcastAddress_1[] = {0xC8, 0x2E, 0x18, 0xF7, 0x53, 0xE8};
@@ -24,6 +32,7 @@ enum package_type
     package_type_request = 2,
     package_type_response = 3
 };
+
 
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
@@ -191,31 +200,31 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
             switch (receive_data[4])
             {
             case 0x01:
-                state_machine.Status = back_to_init;
+                gripper_two.Gripper_Status = back_to_init;
                 break;
 
             case 0x02:
-                state_machine.Status = set_to_init;
+                gripper_two.Gripper_Status = set_to_init;
                 break;
 
             case 0x04:
-                state_machine.Status = start_to_pick;
+                gripper_two.Gripper_Status = start_to_pick;
                 break;
 
             case 0x05:
-                state_machine.Status = start_to_pick;
+                gripper_two.Gripper_Status = start_to_pick;
                 break;
 
             case 0x07:
-                state_machine.Status = start_to_set;
+                gripper_two.Gripper_Status = start_to_set;
                 break;
 
             case 0x08:
-                state_machine.Status = start_to_set;
+                gripper_two.Gripper_Status = start_to_set;
                 break;
 
             case 0x09:
-                state_machine.Status = start_to_scan;
+                gripper_two.Gripper_Status = start_to_scan;
                 break;
 
             default:

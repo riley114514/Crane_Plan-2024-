@@ -8,6 +8,9 @@
 #define Width_mm 1960 // 框架可移动宽度距离: 1960 mm
 #define Height_mm 280 // 框架可移动高度距离: 280 mm
 
+void Task_Get_Location(void *prfrk);
+
+
 class Gripper
 {
 public:
@@ -36,6 +39,7 @@ public:
         Current_Y_Location = 0;
         Target_Z_Location = 0;
         Current_Z_Location = 0;
+        Gripper_Status = 0;
     }
 
     /**
@@ -209,7 +213,7 @@ public:
     float Current_Y_Location;
     float Target_Z_Location;
     float Current_Z_Location;
-
+    uint8_t Gripper_Status;
     
 private:
     /* data */
