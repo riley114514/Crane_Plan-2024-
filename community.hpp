@@ -3,10 +3,8 @@
 #endif
 
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 
 #define Max_Wait_Time 120000
-
 
 typedef int community_Command_Status;
 
@@ -33,166 +31,148 @@ community_Command_Status Communcation_Init(HardwareSerial *serial, uint8_t id)/*
     }
 
 community_Command_Status NANO_Send()//向NANO发送开始检测的信号(此为默认检测方向)
-{
-  buffer[0]=serial->read();
-  while(buffer[0]!=0x77)
-  {
-    // uint8_t length;
-    uint8_t send_data[2]={0x1D,0x1e};//此为第三、四。0x1D开始检测，0x1e让nano向从左往右边扫描
-    // length=sizeof(send_data)/sizeof(send_data[0]);
-    Serial.write(0x77);
-    // Serial.write(0x77);
-    // Serial.write(length);
-    serial_Send(send_data,2);
-    Serial.write(0x5B);
-    delay(500);
-    buffer[0]=serial->read();
-    while(Serial.available()>0&&buffer[0]==0x77)
     {
-      return buffer[0];
-      break;
+      buffer[0]=serial->read();
+      while(buffer[0]!=0x77)
+      {
+        // uint8_t length;
+        uint8_t send_data[2]={0x1D,0x1e};//此为第三、四。0x1D开始检测，0x1e让nano向从左往右边扫描
+        // length=sizeof(send_data)/sizeof(send_data[0]);
+        Serial.write(0x77);
+        Serial.write(0x77);
+        // Serial.write(length);
+        Serial.write(send_data,2);
+        Serial.write(0x5B);
+        delay(500);
+        buffer[0]=serial->read();
+        while(buffer[0]==0x77)
+        {
+          return buffer[0];
+          break;
+        }
+      }
     }
-  }
-}
 
 community_Command_Status NANO_Identification_Status_1()//	0x2D 检测停止（此时不需要检测第五帧）（用于机械爪搬运砝码时，以及将砝码放置到对应地点前）
-{
-  buffer[0]=serial->read();
-  while(buffer[0]!=0x77)
-  {
-    // uint8_t length;
-    uint8_t send_data[1]={0x2D};
-    // length=sizeof(send_data)/sizeof(send_data[0]);
-    Serial.write(0x77);
-    Serial.write(0x77);
-    // Serial.write(length);
-    serial_Send(send_data,1);
-    Serial.write(0x5B);
-    delay(5);
-    buffer[0]=serial->read();
-    while(Serial.available()>0&&buffer[0]==0x77)
     {
-      return buffer[0];
-      break;
+      buffer[0]=serial->read();
+      while(buffer[0]!=0x77)
+      {
+        // uint8_t length;
+        uint8_t send_data[1]={0x2D};
+        // length=sizeof(send_data)/sizeof(send_data[0]);
+        Serial.write(0x77);
+        Serial.write(0x77);
+        // Serial.write(length);
+        serial_Send(send_data,1);
+        Serial.write(0x5B);
+        delay(5);
+        buffer[0]=serial->read();
+        while(Serial.available()>0&&buffer[0]==0x77)
+        {
+          return buffer[0];
+          break;
+        }
+      }
     }
-  }
-}
 
 
 community_Command_Status NANO_Identification_Status_2()//当横杆移动到最右端时并改变移动方向，与NANO通信该=改变识别方向
-{
-  buffer[0]=serial->read();
-  while(buffer[0]!=0x77)
-  {
-    // uint8_t length;
-    uint8_t send_data[2]={0x1D,0x1f};
-    // length=sizeof(send_data)/sizeof(send_data[0]);
-    Serial.write(0x77);
-    Serial.write(0x77);
-    // Serial.write(length);
-    serial_Send(send_data,2);
-    Serial.write(0x5B);
-    delay(5);
-    buffer[0]=serial->read();
-    while(Serial.available()>0&&buffer[0]==0x77)
     {
-      return buffer[0];
-      break;
+      buffer[0]=serial->read();
+      while(buffer[0]!=0x77)
+      {
+        // uint8_t length;
+        uint8_t send_data[2]={0x1D,0x1f};
+        // length=sizeof(send_data)/sizeof(send_data[0]);
+        Serial.write(0x77);
+        Serial.write(0x77);
+        // Serial.write(length);
+        serial_Send(send_data,2);
+        Serial.write(0x5B);
+        delay(5);
+        buffer[0]=serial->read();
+        if(Serial.available()>0&&buffer[0]==0x77)
+        {
+          return buffer[0];
+        }
+      }
     }
-  }
-}
 
 
 community_Command_Status NANO_Recieve()//接收NANO的信号,停止向NANO发送数据，同时让NANO也停止发送数据
-{
-  while(buffer[0]==0x77)
-  {
-    buffer[1]=serial->read();
-    delay(1);
-
-    while(buffer[1]==0x77)// 接收数据长度（数据长度+4）
     {
-      for (int i = 2; i < buffer[2]; i++) 
+      while(buffer[0]==0x77)
       {
-        buffer[i] = Serial.read();
-      }
-      buffer[3]=serial->read();//第三帧接受后接收第四帧，判断是否为圆
-      while(buffer[3]==0x1B)//验证第四帧，是否为终止发送向NANO发送信号
-      { 
-        // int led_pin=12;
-        // pinMode(led_pin,OUTPUT);
-        // digitalWrite(led_pin,HIGH);
-        // delay(3000);
-        // digitalWrite(12,LOW);
-        // break;
+        buffer[1]=serial->read();
+        delay(1);
 
-      } 
-      
-    }
-  }
-}
+        while(buffer[1]==0x77)// 接收数据长度（数据长度+4）
+        {
+          for (int i = 2; i < buffer[2]; i++) 
+          {
+            buffer[i] = Serial.read();
+          }
+          buffer[3]=serial->read();//第三帧接受后接收第四帧，判断是否为圆
+          while(buffer[3]==0x1B)//验证第四帧，是否为终止发送向NANO发送信号
+          { 
+            // int led_pin=12;
+            // pinMode(led_pin,OUTPUT);
+            // digitalWrite(led_pin,HIGH);
+            // delay(3000);
+            // digitalWrite(12,LOW);
+            // break;
 
-community_Command_Status Identify_Scales()//砝码个数识别 
-{
-buffer[0]=serial->read();
- while(buffer[0]==0x77)
-  {
-    buffer[1]=serial->read();
-    delay(1);
-
-    while(buffer[1]==0x77)// 接收数据长度（数据长度+4）
-    {
-      for (int i = 2; i < buffer[2]; i++) //77 77   3 1a ff  5B
-      {
-        buffer[i] = Serial.read();
-      }
-
-      buffer[3]=serial->read();//第三帧接受后接收第四帧，判断是否为圆
-      while(buffer[3]==0x00)
-      {
-          /*
-          机械爪运动逻辑
-          */
-        buffer[4]=serial->read();
-        while(buffer[4]==0x1a)
-        { 
-
-          int led_pin_1=13;
-          pinMode(led_pin_1,OUTPUT);
-          digitalWrite(led_pin_1,HIGH);
-          delay(3000);
-          digitalWrite(13,LOW);
-          break;
-
-        } 
-
-        while(buffer[4]==0x1b)
-        { 
-          int led_pin_2=12;
-          pinMode(led_pin_2,OUTPUT);
-          digitalWrite(led_pin_2,HIGH);
-          delay(3000);
-          digitalWrite(12,LOW);
-          break;
-        } 
-        while(buffer[4]==0x1c) 
-        { 
-
-          int led_pin_3=14;
-          pinMode(led_pin_3,OUTPUT);
-          digitalWrite(led_pin_3,HIGH);
-          delay(3000);
-          digitalWrite(14,LOW);
-          break;
-
-        } 
+          } 
+          
+        }
       }
     }
-  }
-}
+
+community_Command_Status ScalesGrasping()//砝码个数识别 
+    {
+    buffer[0]=serial->read();
+    while(buffer[0]==0x77)
+      {
+        buffer[1]=serial->read();
+        delay(1);
+        while(buffer[1]==0x77)// 接收数据长度（数据长度+4）
+        {
+          buffer[2]=serial->read();//第三帧接受后接收第四帧，判断是否为圆
+          while(buffer[2]==0x02)
+          {
+            buffer[3]=serial->read();
+            while(buffer[3]==0x1A)
+            { 
+
+              int led_pin_1=17;
+              pinMode(led_pin_1,OUTPUT);
+              digitalWrite(led_pin_1,HIGH);
+              delay(3000);
+              digitalWrite(17,LOW);
+            } 
+            while(buffer[3]==0x1B)
+            { 
+              int led_pin_2=5;
+              pinMode(led_pin_2,OUTPUT);
+              digitalWrite(led_pin_2,HIGH);
+              delay(3000);
+              digitalWrite(5,LOW);
+            } 
+            while(buffer[3]==0x1C) 
+            { 
+              int led_pin_3=18;
+              pinMode(led_pin_3,OUTPUT);
+              digitalWrite(led_pin_3,HIGH);
+              delay(3000);
+              digitalWrite(18,LOW);
+            } 
+          }
+        }
+      }
+    }
 
 private:
-SoftwareSerial espSerial;
 HardwareSerial *serial;
 HardwareSerial *serial2;
 uint8_t ID;//每个esp32芯片的ID号，便于区分
