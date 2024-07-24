@@ -29,107 +29,110 @@ community_Command_Status Communcation_Init(HardwareSerial *serial2,int rx,int tx
     return community_Command_Success;
     }
 
-community_Command_Status NANO_Send()//向NANO发送开始检测的信号(此为默认检测方向)
+
+
+community_Command_Status NANO_Send()//向NANO发送开始检测的信号
     {
-      buffer[0]=serial->read();
-      while(buffer[0]!=0x77)
+      this->buffer[0]=CommunitySerial->read();
+      if(this->buffer[0]!=0x77)//while 
       {
-        uint8_t send_data[1]={0x1D};//此为第三、四。0x1D开始检测，0x1e让nano向从左往右边扫描
-        Serial.write(0x77);
-        Serial.write(0x77);
-        Serial.write(send_data,1);
-        Serial.write(0x5B);
+        uint8_t send_data[4]={0x77,0x78,0x1D,0x5B};
+        this->serial_Send(send_data,4);
         delay(100);
-        buffer[0]=serial->read();
-        while(buffer[0]==0x77)
+        this->buffer[0]=this->CommunitySerial->read();
+        if(this->buffer[0]==0x77)
         {
           return buffer[0];
-          break;
         }
       }
     }
 
-community_Command_Status NANO_Identification_Status_1()//	0x2D 检测停止（此时不需要检测第五帧）（用于机械爪搬运砝码时，以及将砝码放置到对应地点前）
+/*
+@brief 当nano传输完所有点的坐标,发送0x2D让nano停止检测
+*/
+
+community_Command_Status NANO_Identification_Status_1()
     {
-      buffer[0]=serial->read();
-      while(buffer[0]!=0x77)
+      this->buffer[0]=this->CommunitySerial->read();
+      if(this->buffer[0]!=0x77)
       {
-        uint8_t send_data[1]={0x2D};
-        Serial.write(0x77);
-        Serial.write(0x77);
-        serial_Send(send_data,1);
-        Serial.write(0x5B);
+        uint8_t send_data[4]={0x77,0x78,0x2D,0x5B};
+        this->serial_Send(send_data,4);
         delay(5);
-        buffer[0]=serial->read();
-        while(Serial.available()>0&&buffer[0]==0x77)
+        if(buffer[0]==0x77)
         {
           return buffer[0];
-          break;
         }
       }
     }
 
 
-community_Command_Status NANO_Recieve()//接收NANO的信号,停止向NANO发送数据，同时让NANO也停止发送数据
+
+/*
+ @brief 接收NANO的信号,停止向NANO发送数据，同时让NANO也停止发送数据
+ @param 
+*/
+
+community_Command_Status NANO_Recieve()
     {
-      while(buffer[0]==0x77)
+      while(this->buffer[0]!=0x77)
       {
-        buffer[1]=serial->read();
-        delay(1);
-
-        while(buffer[1]==0x77)// 接收数据长度（数据长度+4）
-        {
-          buffer[3]=serial->read();//第三帧接受后接收第四帧
-          while(buffer[2]==0x1B)//验证第四帧，是否为终止发送向NANO发送信号
-          { 
-            // int led_pin=12;
-            // pinMode(led_pin,OUTPUT);
-            // digitalWrite(led_pin,HIGH);
-            // delay(3000);
-            // digitalWrite(12,LOW);
-            // break;
-            buffer[3]=serial->read();
-            while (buffer[3]==0x5B)
-            {
-              break;
-            }
-          } 
-        }
+        this->buffer[0]=this->CommunitySerial->read();
       }
+      for (int i = 1; i < 4; i++)
+      {
+        this->buffer[i]=this->CommunitySerial->read();
+        delay(1);
+      } 
+          if(this->buffer[2]==0x1B)//验证第四帧，是否为终止发送向NANO发送信号
+          { 
+            int led_pin=21;
+            pinMode(21,OUTPUT);
+            digitalWrite(21,HIGH);
+            delay(3000);
+            digitalWrite(21,LOW);
+            return community_Command_Success;
+          } else{
+            this->buffer[0]=0;
+            this->buffer[1]=0;
+          }
     }
+
+
 /*
 *@brief 砝码识别，通过识别到固定点位上的砝码，传入到buffer[4]->buffer[9]中
  @param 
 */
 community_Command_Status ScaleIdentification()
 {
-buffer[0]=serial->read();
-while (buffer[0]==0x77)
-{
-  buffer[1]=serial->read();
-  delay(1);
-  while (buffer[1]==0x77)
+  this->buffer[0]=this->CommunitySerial->read();
+  if(this->buffer[0]==0x77)
   {
-    buffer[2]=serial->read();
+    this->buffer[1]=this->CommunitySerial->read();
     delay(1);
-    while(buffer[2]==0x8F)
+    if(this->buffer[1]==0x87)
     {
-      for(int i=3;i<9;i++)
+      this->buffer[2]=this->CommunitySerial->read();
+      delay(1);
+      if(this->buffer[2]==0x8F)
       {
-        buffer[i]=serial->read();
-        delay(1);
-      }
-
-      for (int  j = 0; j < 6; j++)
-      {
-        location_buffer[j]=buffer[j+3];//将nano传输到buffer[3]-buffer[8]中代表坐标的各个点位转移到新数组中
-        return location_buffer[5];
+        for(int i=3;i<9;i++)
+        {
+          buffer[i]=CommunitySerial->read();
+          delay(1);
+        }
+        for (int  j = 0; j < 6; j++)
+        {
+          location_buffer[j]=buffer[j+3];//将nano传输到buffer[3]-buffer[8]中代表坐标的各个点位转移到新数组中
+        }
+        this->serial_Send(location_buffer,5);
       }
     }
   }
+  // return location_buffer[5];
 }
 
-uint8_t bubbleSort(uint8_t location_buffer[])
+uint8_t bubbleSort(uint8_t location_buffer[5])
 {
 int i=0, j=0;
     uint8_t temp=0x00;
@@ -148,9 +151,7 @@ int i=0, j=0;
 
 }
 
-
-}
-private:
+// private:
 HardwareSerial *CommunitySerial;
 HardwareSerial *serial;
 HardwareSerial *serial2;
@@ -169,7 +170,7 @@ void serial_Send(uint8_t *data, int length, bool need_delay = true)
   {
   for (int i = 0; i < length; i++)
   {
-    this->serial->write(data[i]);
+    this->CommunitySerial->write(data[i]);
   }
   if(need_delay)
    delay(10);
@@ -182,18 +183,17 @@ void serial_Send(uint8_t *data, int length, bool need_delay = true)
 community_Command_Status serial_Receive(uint8_t *buffer, int length, bool need_delay = true)
     {
         if(need_delay)
+        {
             delay(10);
+        }
         for (int i = 0; i < Max_Wait_Time; i++)
         {
-            if (this->serial->available())
+          if (this->CommunitySerial->available())
             {
-                this->buffer[0] = this->serial->read();
-                this->buffer[1] = this->serial->read();
-                if (this->buffer[0] == this->ID)
-                {
-                    for(int j = 1; j < length; j++)
-                        this->buffer[j] = this->serial->read();
-                }
+              for(int j = 1; j < length; j++)
+              {
+                  this->buffer[j] = this->CommunitySerial->read();
+              }
                 return community_Command_Success;
             }
             delay(1);
