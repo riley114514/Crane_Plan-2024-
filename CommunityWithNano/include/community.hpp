@@ -17,16 +17,15 @@ enum
     community_Send_False,
 }Command_Status_1;
 
-class community
+class Community
 {
 public:
-community_Command_Status Communcation_Init(HardwareSerial *serial, uint8_t id)/*串口初始化*/
+community_Command_Status Communcation_Init(HardwareSerial *serial2,int rx,int tx)/*串口初始化*/
     {
-    if(serial == NULL)
+    if(serial2 == NULL)
         return community_command_error;
-        this->serial = serial;
-        this->ID = id;
-        Serial.begin(115200);
+        this->CommunitySerial = serial2;
+        this->CommunitySerial->begin(115200,SERIAL_8N1,rx,tx);
     return community_Command_Success;
     }
 
@@ -124,14 +123,35 @@ while (buffer[0]==0x77)
       for (int  j = 0; j < 6; j++)
       {
         location_buffer[j]=buffer[j+3];//将nano传输到buffer[3]-buffer[8]中代表坐标的各个点位转移到新数组中
+        return location_buffer[5];
       }
     }
   }
 }
 
+uint8_t bubbleSort(uint8_t location_buffer[])
+{
+int i=0, j=0;
+    uint8_t temp=0x00;
+    for (i = 0; i < 4; i++) 
+    {
+        for (j = 0; j < 4-i; j++) 
+        {
+            if (location_buffer[j] > location_buffer[j+1])
+             {
+                temp = location_buffer[j];
+                location_buffer[j] = location_buffer[j+1];
+                location_buffer[j+1] = temp;
+            }
+        }
+    }
+
+}
+
 
 }
 private:
+HardwareSerial *CommunitySerial;
 HardwareSerial *serial;
 HardwareSerial *serial2;
 uint8_t ID;//每个esp32芯片的ID号，便于区分
@@ -139,7 +159,7 @@ uint8_t buffer[100];
 int Rx_pin;
 int Tx_pin;
 int char1;
-uint8_t location_buffer[20]; //用于存储6个砝码坐标的数组
+uint8_t location_buffer[6]; //用于存储6个砝码坐标的数组
 
 /*
     向NANO发送命令
