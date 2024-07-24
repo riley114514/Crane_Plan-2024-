@@ -11,15 +11,9 @@ void Task_Status_Check(void *prsm);
 
 
 // 状态机的状态表示声明
-
 #define move_stop 0
 #define start_to_pick 1
 #define start_to_set 2
-#define start_to_scan 3
-#define back_to_init 4
-#define set_to_init 5
-
-
 
 class Status
 {
@@ -46,7 +40,7 @@ public:
      */
     void State_Status_Check(void)
     {
-        xTaskCreatePinnedToCore(Task_Status_Check, "Task_Status_Check", 4096, this, 5, NULL, 1);
+        xTaskCreatePinnedToCore(Task_Status_Check, "Task_Status_Check", 4096, this, 5, NULL, 0);
     }
     uint8_t Status;
 
@@ -76,21 +70,9 @@ void Task_Status_Check(void *prsm)
             break;
         }
 
-        case back_to_init:
-        {
-            gripper_two.Gripper_Move_Stop();
-            break;
-        }
-
-        case set_to_init:
-        {
-            gripper_two.Gripper_Move_Stop();
-            break;
-        }
-
         case start_to_pick:
         {
-            gripper_two.Gripper_Start_To_Pick();
+            gripper_two.Gripper_Start_To_Pick(gripper_two.Pick_Location);
             esp_now_community.Framework_Move_To_Set_Location();
             gripper_two.Gripper_Status = move_stop;
             break;
@@ -98,15 +80,7 @@ void Task_Status_Check(void *prsm)
 
         case start_to_set:
         {
-            gripper_two.Gripper_Start_To_Set();
-            esp_now_community.Framework_Start_To_Scan();
-            gripper_two.Gripper_Status = start_to_scan;
-            break;
-        }
-
-        case start_to_scan:
-        {
-            gripper_two.Gripper_Start_To_Scan();
+            gripper_two.Gripper_Start_To_Set(gripper_two.Set_Location);
             gripper_two.Gripper_Status = move_stop;
             break;
         }
