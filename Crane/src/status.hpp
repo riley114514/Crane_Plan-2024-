@@ -10,24 +10,6 @@ void Task_Status_Check(void *prsm);
 extern Esp_Now_Community esp_now_community;
 extern Framework framework;
 
-// 状态机的状态表示声明
-#define move_stop 0
-#define move_forward 1
-#define move_backward 2
-#define gripper_one_pick_work 4
-#define gripper_two_pick_work 5
-#define gripper_together_pick_work 6
-#define gripper_one_set_work 7
-#define gripper_two_set_work 8
-#define gripper_together_set_work 9
-#define gripper_back_to_location 10
-#define framework_back_to_location 11
-#define start_scan 12
-#define move_to_set_location 13
-
-
-
-
 class Status
 {
 
@@ -41,7 +23,8 @@ public:
      */
     void State_Init()
     {
-        this->Status = gripper_back_to_location;
+        this->Status = framework.Framework_Status;
+        this->State_Status_Check();
     }
 
     /**
@@ -53,7 +36,7 @@ public:
      */
     void State_Status_Check(void)
     {
-        xTaskCreatePinnedToCore(Task_Status_Check, "Task_Status_Check", 4096, this, 5, NULL, 1);
+        xTaskCreatePinnedToCore(Task_Status_Check, "Task_Status_Check", 4096, this, 5, NULL, 0);
     }
 
     uint8_t Status;
@@ -85,100 +68,73 @@ void Task_Status_Check(void *prsm)
         case move_stop:
         {
             framework.Framework_Move_Stop();
-            break;
-        }
-
-        case move_forward:
-        {
-            framework.Framework_Move_Speed(60);
-            break;
-        }
-
-        case move_backward:
-        {
-            framework.Framework_Move_Speed(-60);
-            break;
-        }
-
-        case gripper_one_pick_work:
-        {
-            esp_now_community.Gripper_One_Work();
-            framework.Framework_Status = move_stop;
-            framework.Pick_Num = 1;
-            break;
-        }
-
-        case gripper_two_pick_work:
-        {
-            esp_now_community.Gripper_Two_Work();
-            framework.Framework_Status = move_stop;
-            framework.Pick_Num = 1;
-            break;
-        }
-
-        case gripper_together_pick_work:
-        {
-            esp_now_community.Gripper_Work_Together();
-            framework.Framework_Status = move_stop;
-            framework.Pick_Num = 1;
-            break;
-        }
-
-        case gripper_one_set_work:
-        {
-            esp_now_community.Gripper_One_Set();
-            framework.Framework_Status = move_stop;
-            break;
-        }
-
-        case gripper_two_set_work:
-        {
-            esp_now_community.Gripper_Two_Set();
-            framework.Framework_Status = move_stop;
-            break;
-        }
-
-        case gripper_together_set_work:
-        {
-            esp_now_community.Gripper_Set_Together();
-            framework.Framework_Status = move_stop;
-            break;
-        }
-
-        case gripper_back_to_location:
-        {
-            esp_now_community.Gripper_Back_To_Loaction();
-            framework.Framework_Status = move_stop;
-            break;
-        }
-
-        case framework_back_to_location:
-        {
-            framework.Frame_Back_To_Location();
-            esp_now_community.Gripper_Down_To_Loaction();
-            framework.Framework_Status = move_stop;
+            if(digitalRead(27) == LOW)
+            {
+                framework.Framework_Status = start_scan;
+            }
             break;
         }
 
         case start_scan:
         {
-            // 这里插入与nano通信的开始扫描函数
-
-            //
-            esp_now_community.Gripper_Start_To_Pick();
+            esp_now_community.Gripper_Start_Scan();
             framework.Framework_Status = move_stop;
+            break;
+        }
+
+        case move_to_pick_location:
+        {
+            if(framework.Weight_Num == 3)
+            {
+                framework.Pick_Num = 1;
+                esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight - 1]);
+                framework.pointer_weight -= 1;
+                framework.Framework_Status = move_stop;
+            }
+            else
+            {
+                if(framework.Weight_Location[framework.pointer_weight] / 16 == framework.Weight_Location[framework.pointer_weight - 1] / 16)
+                {
+                    framework.Pick_Num = 2;
+                    esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight]);
+                    esp_now_community.Gripper_Two_Work(framework.Weight_Location[framework.pointer_weight - 1]);
+                    framework.Framework_Status = move_stop;
+                    framework.pointer_weight -= 2;
+                }
+                else
+                {
+                    if(framework.Pick_Num % 2 == 0)
+                        esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight]);
+                    else
+                        esp_now_community.Gripper_Two_Work(framework.Weight_Location[framework.pointer_weight - 1]);
+                    framework.Pick_Num++;
+                    framework.pointer_weight -= 1;
+                    if(framework.Pick_Num % 2 == 0)
+                        framework.Framework_Status = move_stop;
+                }
+            }
+
             break;
         }
 
         case move_to_set_location:
         {
-            // framework.Frame_Set_Location();
-            if(framework.Set_Num == 1)
-                framework.Framework_Status = gripper_one_pick_work;
+            framework.Frame_Set_Location(Set_Location[0][framework.Weight_Num]);
+            if(framework.Weight_Num == 3)
+            {
+                framework.Set_Num = 1;
+                esp_now_community.Gripper_One_Set(framework.Weight_Num);
+            }
             else
-                framework.Framework_Status = gripper_together_pick_work;
+            {
+                framework.Set_Num = 2;
+                esp_now_community.Gripper_Two_Set(framework.Weight_Num);
+                esp_now_community.Gripper_One_Set(framework.Weight_Num - 1);
+            }
+            framework.Framework_Status = move_stop;
             break;
         }
+
 
         default:
             break;

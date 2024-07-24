@@ -13,8 +13,7 @@ extern Framework framework;
 
 // 状态机的状态表示声明
 #define move_stop 0
-#define move_forward 1
-#define move_backward 2
+#define move_to_pick_location 1
 #define gripper_one_pick_work 4
 #define gripper_two_pick_work 5
 #define gripper_together_pick_work 6
@@ -155,42 +154,15 @@ public:
     // }
 
     /**
-     * @brief 机械爪启动后复位函数,先让爪子上升，并向两侧复位，
-     *        （然后滑杆开始复位，再让爪子下降）这是后面的两个函数
-     * 
-     * @param 无
-     * 
-     * @return None
-     */
-    void Gripper_Back_To_Loaction() 
-    {
-        uint8_t send_data[6]= {Header, Header, 6, 0x03, 0x01, Rear};
-        esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
-    }
-
-    /**
-     * @brief 滑杆复位完成后，让爪子下降函数
-     * 
-     * @param 无
-     * 
-     * @return None
-     */
-    void Gripper_Down_To_Loaction() 
-    {
-        uint8_t send_data[6]= {Header, Header, 6, 0x03, 0x02, Rear};
-        esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
-    }
-
-    /**
      * @brief 一号机械爪开始工作函数，用于当前位置只抓一个砝码
      * 
      * @param 无
      * 
      * @return None
      */
-    void Gripper_One_Work() 
+    void Gripper_One_Work(uint8_t num) 
     {
-        uint8_t send_data[6]= {Header, Header, 6, 0x01, 0x03, Rear};
+        uint8_t send_data[7]= {Header, Header, 7, 0x01, 0x05, num, Rear};
         esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
     }
 
@@ -202,25 +174,14 @@ public:
      * 
      * @return None
      */
-    void Gripper_Two_Work() 
+    void Gripper_Two_Work(uint8_t num) 
     {
-        uint8_t send_data[6]= {Header, Header, 6, 0x02, 0x04, Rear};
+        uint8_t send_data[7]= {Header, Header, 7, 0x02, 0x05, num, Rear};
         esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
     }
 
 
-    /**
-     * @brief 两个机械爪开始工作函数，用于当前位置要抓两个砝码
-     * 
-     * @param 无
-     * 
-     * @return None
-     */
-    void Gripper_Work_Together() 
-    {
-        uint8_t send_data[6]= {Header, Header, 6, 0x03, 0x05, Rear};
-        esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
-    }
+
 
     /**
      * @brief 一号机械爪放到指定位置，用于只有一号机械爪夹取砝码
@@ -229,9 +190,9 @@ public:
      * 
      * @return None
      */
-    void Gripper_One_Set() 
+    void Gripper_One_Set(uint8_t num) 
     {
-        uint8_t send_data[6]= {Header, Header, 6, 0x01, 0x06, Rear};
+        uint8_t send_data[7]= {Header, Header, 7, 0x01, 0x08, num, Rear};
         esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
     }
 
@@ -243,22 +204,9 @@ public:
      * 
      * @return None
      */
-    void Gripper_Two_Set() 
+    void Gripper_Two_Set(uint8_t num) 
     {
-        uint8_t send_data[6]= {Header, Header, 6, 0x02, 0x07, Rear};
-        esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
-    }
-
-    /**
-     * @brief 两个机械爪放到指定位置，用于两个机械爪都夹取砝码
-     * 
-     * @param 无
-     * 
-     * @return None
-     */
-    void Gripper_Set_Together() 
-    {
-        uint8_t send_data[6]= {Header, Header, 6, 0x03, 0x08, Rear};
+        uint8_t send_data[7]= {Header, Header, 7, 0x02, 0x08, num, Rear};
         esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
     }
 
@@ -269,9 +217,9 @@ public:
      * 
      * @return None
      */
-    void Gripper_Start_To_Pick() 
+    void Gripper_Start_Scan() 
     {
-        uint8_t send_data[6]= {Header, Header, 6, 0x03, 0x09, Rear};
+        uint8_t send_data[6]= {Header, Header, 6, 0x04, 0x11, Rear};
         esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
     }
 
@@ -292,33 +240,56 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     /*
         编写执行功能函数，用于接收函数
     */
-    uint8_t receive_data[6];
+    uint8_t receive_data[12];
     memcpy(&receive_data, incomingData, sizeof(receive_data));
+
     if (receive_data[0] == Header && receive_data[1] == Header)
     {
-        if (receive_data[3] == 0x04)
+        if (receive_data[3] == 0x03)
         {
             switch (receive_data[4])
             {
             case 0x11:
+            {
                 framework.Pick_Finish_Num++;
                 if(framework.Pick_Finish_Num == framework.Pick_Num)
                 {
                     framework.Framework_Status = move_to_set_location;
                     framework.Pick_Finish_Num = 0;
+                    framework.Pick_Num = 0;
                 }
                 break;
+            }
+
 
             case 0x12:
+            {
                 framework.Set_Finish_Num++;
                 if(framework.Set_Finish_Num == framework.Set_Num)
                 {
-                    framework.Framework_Status = start_scan;
                     framework.Weight_Num -= framework.Set_Finish_Num;
+                    if(framework.Weight_Num > 0)
+                        framework.Framework_Status = move_to_pick_location;
+                    else
+                        framework.Framework_Status = move_stop;
                     framework.Set_Finish_Num = 0;
+                    framework.Set_Num = 0;
                 }
-                break;
 
+                break;
+            }
+
+            case 0x13:
+            {
+                for(int i = 0; i< 6; i++)
+                {
+                    framework.Weight_Location[i] = receive_data[i+5];
+                }
+                framework.Framework_Status = move_to_pick_location;
+                break;
+            }
+
+                
             default:
                 break;
             }

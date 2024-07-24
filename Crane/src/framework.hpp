@@ -4,15 +4,72 @@
 #include <Arduino.h>
 #include "steeping42.hpp"
 
-#define Length_mm 3960 // 框架可移动长度距离: 3960 mm
-#define Width_mm 1960 // 框架可移动宽度距离: 1960 mm
+// 状态机的状态表示声明
+#define move_stop 0
+#define gripper_one_pick_work 4
+#define gripper_two_pick_work 5
+#define gripper_together_pick_work 6
+#define gripper_one_set_work 7
+#define gripper_together_set_work 9
+#define move_to_set_location 13
+#define move_to_pick_location 14
+
+
 
 void Task_Get_Location(void *prfrk);
+float Weight_Location_X[18] = {2000, 0, 0,
+                               2375, 2375, 2375,
+                               2562.5, 2562.5, 0,
+                               2937.5, 2937.5, 0,
+                               3125, 3125, 3125,
+                               500, 0, 0};
+float Weight_Location_Y[18] = {1000, 0, 0,
+                               1650, 1000, 350,
+                               1325, 675, 0,
+                               1325, 675, 0,
+                               1650, 1000, 350,
+                               1000, 0, 0};
 
-
+float Set_Location[2][5] = {245,245,1750,3755,3755,
+                            245,1755,1000,245,1755};
 class Framework
 {
 public:
+
+    /**
+     * @brief 整体框架初始化
+     * 
+     * @param motor1 : 电机1
+     * @param motor2 : 电机2
+     * @param slmotor : 电机通信串口
+     * @param rx : 串口 rx_pin
+     * @param tx : 串口 tx_pin
+     * 
+     * @return None
+     */
+    void Framework_Motor_Init(Steeping42 *motor1, Steeping42 *motor2, HardwareSerial *slmotor)
+    {
+        slmotor->begin(115200);
+        pinMode(27,INPUT_PULLUP);
+        pinMode(14,INPUT_PULLUP);
+        this->Steeping42_Motor_2 = motor2;
+        this->Steeping42_Motor_2->Steeping_Init(slmotor, 2);
+        this->Steeping42_Motor_1 = motor1;
+        this->Steeping42_Motor_1->Steeping_Init(slmotor, 1);
+        this->Frame_Back_To_Location();
+        this->Steeping42_Motor_1->Clear_All();
+        this->Steeping42_Motor_2->Clear_All();
+        Current_Location = 200;
+        Framework_Status = move_stop;
+        Pick_Num = 2;
+        Set_Num = 2;
+        Pick_Finish_Num = 0;
+        Set_Finish_Num = 0;
+        Weight_Num = 5;
+        pointer_weight = 6;
+        this->Framework_Motor_Get_Location();
+    }
+
     /**
      * @brief 整体框架初始化
      * 
@@ -27,6 +84,8 @@ public:
     void Framework_Motor_Init(Steeping42 *motor1, Steeping42 *motor2, HardwareSerial *slmotor, int rx, int tx)
     {
         slmotor->begin(115200,SERIAL_8N1,rx,tx);
+        pinMode(27,INPUT_PULLUP);
+        pinMode(14,INPUT_PULLUP);
         this->Steeping42_Motor_2 = motor2;
         this->Steeping42_Motor_2->Steeping_Init(slmotor, 2);
         this->Steeping42_Motor_1 = motor1;
@@ -34,14 +93,15 @@ public:
         this->Frame_Back_To_Location();
         this->Steeping42_Motor_1->Clear_All();
         this->Steeping42_Motor_2->Clear_All();
-        Target_Location = 0;
-        Current_Location = 120;
-        Framework_Status = 0;
-        Pick_Num = 0;
-        Set_Num = 0;
+        Current_Location = 200;
+        Framework_Status = move_stop;
+        Pick_Num = 2;
+        Set_Num = 2;
         Pick_Finish_Num = 0;
         Set_Finish_Num = 0;
         Weight_Num = 5;
+        pointer_weight = 6;
+        this->Framework_Motor_Get_Location();
     }
 
     /**
@@ -51,18 +111,24 @@ public:
      * 
      * @return None
      */
-    void Framework_Move_Speed(uint16_t rpm)
+    void Framework_Move_Forward(uint16_t rpm)
     {
-        if(rpm >= 0)
-        {
-            this->Steeping42_Motor_1->Speed_Mode_Cmd(0., rpm, 0);
-            this->Steeping42_Motor_2->Speed_Mode_Cmd(1, rpm, 0);
-        }
-        else
-        {
-            this->Steeping42_Motor_1->Speed_Mode_Cmd(1, -rpm, 0);
-            this->Steeping42_Motor_2->Speed_Mode_Cmd(0, -rpm, 0);
-        }
+        this->Steeping42_Motor_1->Speed_Mode_Cmd(1, rpm, 0);
+        this->Steeping42_Motor_2->Speed_Mode_Cmd(0, rpm, 0);
+        this->Steeping42_Motor_1->Dual_Machine_Enable();
+    }
+
+    /**
+     * @brief 控制框架运动 ： 采用速度模式 主要用于启动复位和寻找砝码时使用
+     * 
+     * @param rpm : 电机每分钟圈数 
+     * 
+     * @return None
+     */
+    void Framework_Move_Backward(uint16_t rpm)
+    {
+        this->Steeping42_Motor_1->Speed_Mode_Cmd(0, rpm, 0);
+        this->Steeping42_Motor_2->Speed_Mode_Cmd(1, rpm, 0);
         this->Steeping42_Motor_1->Dual_Machine_Enable();
     }
 
@@ -88,16 +154,14 @@ public:
      */
     void Frame_Back_To_Location()
     {
-        this->Framework_Move_Speed(-60);
-        while(this->Steeping42_Motor_1->Read_Instance_Current() < 600)
+        this->Framework_Move_Backward(30);
+        while(digitalRead(14) != LOW)
         {
-            delay(5);
+            delay(1);
         };
-        this->Steeping42_Motor_2->Motor_Disable_Cmd();
-        this->Steeping42_Motor_1->Motor_Disable_Cmd();
-        delay(1000);
-        this->Steeping42_Motor_2->Motor_Enable_Cmd();
-        this->Steeping42_Motor_1->Motor_Enable_Cmd();
+        this->Steeping42_Motor_2->Stop_Instance();
+        this->Steeping42_Motor_1->Stop_Instance();
+
     }
 
     /**
@@ -108,11 +172,16 @@ public:
      * 
      * @return None
      */
-    void Frame_Set_Location(int target_location, int speed = 600)
+    void Frame_Set_Location(int target_location, int speed = 60)
     {
         float move_location = fabs(target_location - this->Current_Location);
 
         if(target_location >= this->Current_Location)
+        {
+            this->Steeping42_Motor_1->Location_Mode_Cmd(1, speed, move_location);
+            this->Steeping42_Motor_2->Location_Mode_Cmd(0, speed, move_location);
+        }
+        else
         {
             this->Steeping42_Motor_1->Location_Mode_Cmd(0, speed, move_location);
             this->Steeping42_Motor_2->Location_Mode_Cmd(1, speed, move_location);
@@ -132,12 +201,11 @@ public:
      */
     void Framework_Motor_Get_Location(void)
     {
-        xTaskCreatePinnedToCore(Task_Get_Location, "Task_Get_Location_And_Speed", 4096, this, 5, NULL, 1);
+        xTaskCreatePinnedToCore(Task_Get_Location, "Task_Get_Location_And_Speed", 4096, this, 5, NULL, 0);
     }
 
     Steeping42 *Steeping42_Motor_1;
     Steeping42 *Steeping42_Motor_2;
-    float Target_Location;
     float Current_Location;
     uint8_t Framework_Status;
     uint8_t Pick_Num;
@@ -145,6 +213,8 @@ public:
     uint8_t Set_Num;
     uint8_t Set_Finish_Num;
     uint8_t Weight_Num;
+    uint8_t Weight_Location[6];
+    int pointer_weight;
 private:
     /* data */
 };
@@ -177,7 +247,7 @@ void Task_Get_Location(void *prfrk)
                                                                                    framework->Steeping42_Motor_1->Buffer[5] * pow(16, 2) + 
                                                                                    framework->Steeping42_Motor_1->Buffer[6]);
         }
-        framework->Current_Location = (framework->Steeping42_Motor_2->Now_Location - framework->Steeping42_Motor_1->Now_Location) / 65536 * Trip_mm / 2;
+        framework->Current_Location = 200.0 + framework->Steeping42_Motor_2->Now_Location / 65536 * Trip_mm;
         // Serial.printf("Now Laction is : %.2f m\n", chasis->Current_Location);
         // Serial.printf("Now Speed is : %.2f m\n", chasis->Current_Speed);
         delay(5);

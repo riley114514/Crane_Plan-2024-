@@ -8,7 +8,9 @@
 #define Once_Circle_Pulse 3200
 #define PI 3.1415926535
 #define Max_Speed 2000
-#define Trip_mm 66.0 // 行程：66 mm
+#define Trip_mm 224.4 // 平移行程：66 mm
+#define Height_mm 27.0 // 高度行程：27 mm
+#define Servo_mm 30.0 // 舵机行程： 30 mm
 
 typedef int Steeping42_Command_Status;
 
@@ -31,6 +33,7 @@ public:
         if (id < 1 || id > 255 || serial == NULL)
             return Command_Error;
         this->Steeping_Serial = serial;
+        this->Steeping_Serial->begin(115200);
         this->ID = id;
         this->Now_Location = 0;
         this->Motor_Enable_Cmd();
@@ -94,9 +97,9 @@ public:
     /*
         位置控制模式，默认相对模式
     */
-    Steeping42_Command_Status Location_Mode_Cmd(uint8_t direction,uint32_t speed, uint32_t location, uint8_t acceleration = 0x00, bool loaction_mode = false, bool dual_machine = true)
+    Steeping42_Command_Status Location_Mode_Cmd(uint8_t direction,uint32_t speed, uint32_t location, uint8_t acceleration = 0x00, float trip_mm = 224.4,bool loaction_mode = false, bool dual_machine = true)
     {
-        uint32_t pulse = location * Once_Circle_Pulse / Trip_mm;
+        uint32_t pulse = location * Once_Circle_Pulse / trip_mm;
         uint8_t loaction_flag = loaction_mode ? 0x01 : 0x00;
         uint8_t machine_flag = dual_machine ? 0x01 : 0x00;
         uint8_t speed1 = speed % 256;
