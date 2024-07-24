@@ -1,6 +1,6 @@
 #ifndef __COMMUNITY_H
 #define __COMMUNITY_H
-#endif
+
 
 #include <Arduino.h>
 
@@ -8,14 +8,13 @@
 
 typedef int community_Command_Status;
 
-enum 
-{
-    community_Command_Success = 1,
-    community_command_error,
-    community_Command_Insufficient,
-    community_command_part_error,
-    community_Send_False,
-}Command_Status_1;
+
+
+#define    community_Command_Success 1
+#define    community_command_error 2 
+#define    community_Command_Insufficient 3
+#define    community_command_part_error 4
+#define    community_Send_False 6
 
 class Community
 {
@@ -235,3 +234,5 @@ esp32: 传输
 2.确定距横杆最近的砝码，并对其抓取，并保持原来的运动方向，运动到置物台（此时速度可以加快）
 
 */
+
+#endif
