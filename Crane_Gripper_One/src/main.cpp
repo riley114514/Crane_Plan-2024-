@@ -4,7 +4,6 @@
 #include "gripper.hpp"
 #include "esp_now_community.hpp"
 #include "status.hpp"
-
 #include "servo.hpp"
 
 Esp_Now_Community esp_now_community;
@@ -26,11 +25,12 @@ void setup() {
   // gripper_one.Gripper_Set_Y_Location(1000);
   // gripper_one.Gripper_Set_Z_Location(5);
   // servo_gripper.Set_Servo_Angle(80);
-  // gripper_one.Gripper_Set_Z_Location(245);
+  // delay(300);
+  // gripper_one.Gripper_Set_Z_Location(240);
   // gripper_one.Gripper_Set_Y_Location(245);
-  // // gripper_one.Gripper_Set_Z_Location(5);
+  // gripper_one.Gripper_Set_Z_Location(10,30);
   // servo_gripper.Set_Servo_Angle(150);
-  // gripper_one.Gripper_Set_Z_Location(245);
+  // gripper_one.Gripper_Set_Z_Location(240);
 
   // steeping42_motor_2.Steeping_Init(&Serial1,1,25,26);
   // steeping42_motor_2.Speed_Mode_Cmd(1,60,0,false);

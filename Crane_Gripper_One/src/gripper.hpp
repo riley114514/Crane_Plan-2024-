@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "steeping42.hpp"
+#include "servo.hpp"
 
 float Weight_Location_X[18] = {2000, 0, 0,
                                2375, 2375, 2375,
@@ -137,8 +138,8 @@ public:
         };
         this->Steeping42_Motor_2->Stop_Instance();
 
-        this->Gripper_Move_Left(30);
-        while( digitalRead(14) != LOW)
+        this->Gripper_Move_Right(30);
+        while( digitalRead(13) != LOW)
         {
             delay(1);
         };
@@ -229,9 +230,9 @@ public:
     {
         this->Gripper_Set_Y_Location(target_location);
         if(target_location == 1000)
-            this->Gripper_Set_Z_Location(110);
+            this->Gripper_Set_Z_Location(110,30);
         else
-            this->Gripper_Set_Z_Location(210);
+            this->Gripper_Set_Z_Location(210,30);
         this->servo->Set_Servo_Angle(180);
         delay(300);
         this->Gripper_Set_Z_Location(240);
