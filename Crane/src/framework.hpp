@@ -129,7 +129,7 @@ public:
     {
         this->Steeping42_Motor_1->Speed_Mode_Cmd(0, rpm, 0);
         this->Steeping42_Motor_2->Speed_Mode_Cmd(1, rpm, 0);
-        this->Steeping42_Motor_1->Dual_Machine_Enable();
+        this->Steeping42_Motor_2->Dual_Machine_Enable();
     }
 
     /**
@@ -172,7 +172,7 @@ public:
      * 
      * @return None
      */
-    void Frame_Set_Location(int target_location, int speed = 60)
+    void Frame_Set_Location(int target_location, int speed = 180)
     {
         float move_location = fabs(target_location - this->Current_Location);
 
@@ -186,7 +186,7 @@ public:
             this->Steeping42_Motor_1->Location_Mode_Cmd(0, speed, move_location);
             this->Steeping42_Motor_2->Location_Mode_Cmd(1, speed, move_location);
         }
-        this->Steeping42_Motor_1->Dual_Machine_Enable();
+        this->Steeping42_Motor_2->Dual_Machine_Enable();
         while (abs(target_location - this->Current_Location) > 3)
             delay(1);
     }

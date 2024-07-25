@@ -14,9 +14,10 @@ Status state_machine;
 // #define Test_Pin 12
 void setup() {
   Serial.begin(115200);
+  esp_now_community.Esp_Now_Send_Init();
   framework.Framework_Motor_Init(&steeping42_motor_1, &steeping42_motor_2, &Serial);
   state_machine.State_Init();
-  // framework.Frame_Set_Location(1550);
+  // framework.Frame_Set_Location(2937.5);
   // pinMode(Test_Pin,INPUT_PULLUP);
 
 }
