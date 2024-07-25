@@ -72,30 +72,30 @@ community_Command_Status NANO_Identification_Status_1()
  @param 
 */
 
-community_Command_Status NANO_Recieve()
-    {
-      while(this->buffer[0]!=0x77)
-      {
-        this->buffer[0]=this->CommunitySerial->read();
-      }
-      for (int i = 1; i < 4; i++)
-      {
-        this->buffer[i]=this->CommunitySerial->read();
-        delay(1);
-      } 
-          if(this->buffer[2]==0x1B)//验证第四帧，是否为终止发送向NANO发送信号
-          { 
-            int led_pin=21;
-            pinMode(21,OUTPUT);
-            digitalWrite(21,HIGH);
-            delay(3000);
-            digitalWrite(21,LOW);
-            return community_Command_Success;
-          } else{
-            this->buffer[0]=0;
-            this->buffer[1]=0;
-          }
-    }
+// community_Command_Status NANO_Recieve()
+//     {
+//       while(this->buffer[0]!=0x77)
+//       {
+//         this->buffer[0]=this->CommunitySerial->read();
+//       }
+//       for (int i = 1; i < 4; i++)
+//       {
+//         this->buffer[i]=this->CommunitySerial->read();
+//         delay(1);
+//       } 
+//           if(this->buffer[2]==0x1B)//验证第四帧，是否为终止发送向NANO发送信号
+//           { 
+//             int led_pin=21;
+//             pinMode(21,OUTPUT);
+//             digitalWrite(21,HIGH);
+//             delay(3000);
+//             digitalWrite(21,LOW);
+//             return community_Command_Success;
+//           } else{
+//             this->buffer[0]=0;
+//             this->buffer[1]=0;
+//           }
+//     }
 
 
 /*
@@ -105,30 +105,97 @@ community_Command_Status NANO_Recieve()
 community_Command_Status ScaleIdentification()
 {
   this->buffer[0]=this->CommunitySerial->read();
-  if(this->buffer[0]==0x77)
+  // if(this->buffer[0]==0x77)
+  // {
+  //   this->buffer[1]=this->CommunitySerial->read();
+  //   delay(1);
+  //   if(this->buffer[1]==0x87)
+  //   {
+  //     this->buffer[2]=this->CommunitySerial->read();
+  //     delay(1);
+  //     if(this->buffer[2]==0x8F)
+  //     {
+  //       for(int i=3;i<9;i++)
+  //       {
+  //         buffer[i]=this->CommunitySerial->read();
+  //         delay(1);
+  //       }
+  //       for (int  j = 0; j < 6; j++)
+  //       {
+  //         location_buffer[j]=buffer[j+2];//将nano传输到buffer[3]-buffer[8]中代表坐标的各个点位转移到新数组中
+  //       }
+  //       this->serial_Send(location_buffer,5);
+  //     }
+  //   }
+  // }
+
+  if (this->buffer[0]==0x77)
   {
-    this->buffer[1]=this->CommunitySerial->read();
-    delay(1);
-    if(this->buffer[1]==0x87)
+    for (int  i = 1; i < 10; i++)
     {
-      this->buffer[2]=this->CommunitySerial->read();
-      delay(1);
-      if(this->buffer[2]==0x8F)
+      this->buffer[i]=this->CommunitySerial->read();
+    }
+    for (int j = 0; j < 6; j++)
+    {
+      location_buffer[j]=buffer[j+2];
+    }
+    this->serial_Send(location_buffer,6);
+  }
+  
+  //陈云要的可视化史山测试代码
+  if (location_buffer[0]==0x11)
+  {
+    int led_pin=18;
+    pinMode(led_pin,OUTPUT);
+    digitalWrite(led_pin,HIGH);
+    delay(1000);
+    digitalWrite(led_pin,LOW);
+
+    if (location_buffer[1]==0x21)
+    {
+      int led_pin=19;
+      pinMode(led_pin,OUTPUT);
+      digitalWrite(led_pin,HIGH);
+      delay(1000);
+      digitalWrite(led_pin,LOW);
+
+      if (location_buffer[2]==0x31)
       {
-        for(int i=3;i<9;i++)
+        int led_pin=21;
+        pinMode(led_pin,OUTPUT);
+        digitalWrite(led_pin,HIGH);
+        delay(1000);
+        digitalWrite(led_pin,LOW);
+
+        if (location_buffer[3]==0x41)
         {
-          buffer[i]=CommunitySerial->read();
-          delay(1);
+          int led_pin=34;
+          pinMode(led_pin,OUTPUT);
+          digitalWrite(led_pin,HIGH);
+          delay(1000);
+          digitalWrite(led_pin,LOW);
+
+          if (location_buffer[4]==0x51)
+          {
+            int led_pin=35;
+            pinMode(led_pin,OUTPUT);
+            digitalWrite(led_pin,HIGH);
+            delay(1000);
+            digitalWrite(led_pin,LOW);
+
+            if (location_buffer[5]==0x61)
+            {
+              int led_pin=32;
+              pinMode(led_pin,OUTPUT);
+              digitalWrite(led_pin,HIGH);
+              delay(1000);
+              digitalWrite(led_pin,LOW);
+            }
+          }
         }
-        for (int  j = 0; j < 6; j++)
-        {
-          location_buffer[j]=buffer[j+3];//将nano传输到buffer[3]-buffer[8]中代表坐标的各个点位转移到新数组中
-        }
-        this->serial_Send(location_buffer,5);
       }
     }
   }
-  // return location_buffer[5];
 }
 
 uint8_t bubbleSort(uint8_t location_buffer[5])
