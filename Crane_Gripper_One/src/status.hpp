@@ -29,6 +29,7 @@ public:
     void State_Init()
     {
         this->Status = move_stop;
+        this->State_Status_Check();
     }
 
     /**

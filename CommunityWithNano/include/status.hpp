@@ -53,7 +53,6 @@ void Task_Status_Check(void *prsm)
         case start_scan:
         {
             NanoCommunity.NANO_Send();
-            // NanoCommunity.NANO_Recieve();
             NanoCommunity.ScaleIdentification();
             esp_now_community.state = trans_location;
             break;

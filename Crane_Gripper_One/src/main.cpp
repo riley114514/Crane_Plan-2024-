@@ -16,7 +16,7 @@ Servo servo_gripper;
 void setup() {
   Serial.begin(115200);
   // delay(2000);
-  esp_now_community.Esp_Now_Init();
+  esp_now_community.Esp_Now_Init();//STATE初始化必须在motor_init后面
   gripper_one.Gripper_Motor_Init(&steeping42_motor_1, &steeping42_motor_2, &Serial1, 25, 26);
   gripper_one.Gripper_Servo_Init(&servo_gripper, 0, 33);
   state_machine.State_Init();

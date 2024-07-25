@@ -148,7 +148,7 @@ public:
      * 
      * @return None
      */
-    void Send_Weight_Location() 
+    void Send_Weight_Location() //6个砝码的坐标点存储
     {
         uint8_t send_data[10]= {Header, Header, 10, NanoCommunity.location_buffer[0], NanoCommunity.location_buffer[1], NanoCommunity.location_buffer[2], NanoCommunity.location_buffer[3], 
                             NanoCommunity.location_buffer[4], NanoCommunity.location_buffer[5], Rear};

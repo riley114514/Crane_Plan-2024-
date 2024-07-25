@@ -68,7 +68,7 @@ void Task_Status_Check(void *prsm)
         case move_stop:
         {
             framework.Framework_Move_Stop();
-            if(digitalRead(27) == LOW)
+            if(digitalRead(27) == LOW)//左上角有一个总微动开关，摁下后启动线程
             {
                 framework.Framework_Status = start_scan;
             }
@@ -84,7 +84,7 @@ void Task_Status_Check(void *prsm)
 
         case move_to_pick_location:
         {
-            if(framework.Weight_Num == 3)
+            if(framework.Weight_Num == 3)//放置在圆圈中心的木桩
             {
                 framework.Pick_Num = 1;
                 esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight - 1]);
@@ -120,7 +120,7 @@ void Task_Status_Check(void *prsm)
         case move_to_set_location:
         {
             framework.Frame_Set_Location(Set_Location[0][framework.Weight_Num]);
-            if(framework.Weight_Num == 3)
+            if(framework.Weight_Num == 3)//放中间
             {
                 framework.Set_Num = 1;
                 esp_now_community.Gripper_One_Set(framework.Weight_Num);

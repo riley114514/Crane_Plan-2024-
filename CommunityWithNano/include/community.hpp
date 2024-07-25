@@ -143,59 +143,59 @@ community_Command_Status ScaleIdentification()
   }
   
   //陈云要的可视化史山测试代码
-  if (location_buffer[0]==0x11)
-  {
-    int led_pin=18;
-    pinMode(led_pin,OUTPUT);
-    digitalWrite(led_pin,HIGH);
-    delay(1000);
-    digitalWrite(led_pin,LOW);
+  // if (location_buffer[0]==0x11)
+  // {
+  //   int led_pin=18;
+  //   pinMode(led_pin,OUTPUT);
+  //   digitalWrite(led_pin,HIGH);
+  //   delay(1000);
+  //   digitalWrite(led_pin,LOW);
 
-    if (location_buffer[1]==0x21)
-    {
-      int led_pin=19;
-      pinMode(led_pin,OUTPUT);
-      digitalWrite(led_pin,HIGH);
-      delay(1000);
-      digitalWrite(led_pin,LOW);
+  //   if (location_buffer[1]==0x21)
+  //   {
+  //     int led_pin=19;
+  //     pinMode(led_pin,OUTPUT);
+  //     digitalWrite(led_pin,HIGH);
+  //     delay(1000);
+  //     digitalWrite(led_pin,LOW);
 
-      if (location_buffer[2]==0x31)
-      {
-        int led_pin=21;
-        pinMode(led_pin,OUTPUT);
-        digitalWrite(led_pin,HIGH);
-        delay(1000);
-        digitalWrite(led_pin,LOW);
+  //     if (location_buffer[2]==0x31)
+  //     {
+  //       int led_pin=21;
+  //       pinMode(led_pin,OUTPUT);
+  //       digitalWrite(led_pin,HIGH);
+  //       delay(1000);
+  //       digitalWrite(led_pin,LOW);
 
-        if (location_buffer[3]==0x41)
-        {
-          int led_pin=34;
-          pinMode(led_pin,OUTPUT);
-          digitalWrite(led_pin,HIGH);
-          delay(1000);
-          digitalWrite(led_pin,LOW);
+  //       if (location_buffer[3]==0x41)
+  //       {
+  //         int led_pin=34;
+  //         pinMode(led_pin,OUTPUT);
+  //         digitalWrite(led_pin,HIGH);
+  //         delay(1000);
+  //         digitalWrite(led_pin,LOW);
 
-          if (location_buffer[4]==0x51)
-          {
-            int led_pin=35;
-            pinMode(led_pin,OUTPUT);
-            digitalWrite(led_pin,HIGH);
-            delay(1000);
-            digitalWrite(led_pin,LOW);
+  //         if (location_buffer[4]==0x51)
+  //         {
+  //           int led_pin=35;
+  //           pinMode(led_pin,OUTPUT);
+  //           digitalWrite(led_pin,HIGH);
+  //           delay(1000);
+  //           digitalWrite(led_pin,LOW);
 
-            if (location_buffer[5]==0x61)
-            {
-              int led_pin=32;
-              pinMode(led_pin,OUTPUT);
-              digitalWrite(led_pin,HIGH);
-              delay(1000);
-              digitalWrite(led_pin,LOW);
-            }
-          }
-        }
-      }
-    }
-  }
+  //           if (location_buffer[5]==0x61)
+  //           {
+  //             int led_pin=32;
+  //             pinMode(led_pin,OUTPUT);
+  //             digitalWrite(led_pin,HIGH);
+  //             delay(1000);
+  //             digitalWrite(led_pin,LOW);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 uint8_t bubbleSort(uint8_t location_buffer[5])

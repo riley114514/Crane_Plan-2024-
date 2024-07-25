@@ -68,6 +68,7 @@ public:
         Weight_Num = 5;
         pointer_weight = 6;
         this->Framework_Motor_Get_Location();
+        this->Frame_Set_Location(1550);//去往起始点
     }
 
     /**
@@ -94,7 +95,7 @@ public:
         this->Steeping42_Motor_1->Clear_All();
         this->Steeping42_Motor_2->Clear_All();
         Current_Location = 200;
-        Framework_Status = move_stop;
+        Framework_Status = move_stop;//初始化时横杆处于停止状态
         Pick_Num = 2;
         Set_Num = 2;
         Pick_Finish_Num = 0;
