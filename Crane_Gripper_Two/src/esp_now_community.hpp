@@ -15,7 +15,7 @@ extern Gripper gripper_two;
 #define move_stop 0
 #define start_to_pick 1
 #define start_to_set 2
-
+#define start_to_scan 3
 
 // uint8_t broadcastAddress_1[] = {0xC8, 0x2E, 0x18, 0xF7, 0x53, 0xE8};
 uint8_t broadcastAddress_F[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // 广播模式
@@ -201,6 +201,11 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
             default:
                 break;
             }
+        }
+        else if(receive_data[3] == 0x01)
+        {
+            if(receive_data[4] == 0x11)
+                gripper_two.Gripper_Status = start_to_scan;
         }
     }
 }

@@ -22,13 +22,13 @@ void setup() {
   state_machine.State_Init();
   // servo_gripper.Servo_Init(0,33);
   // servo_gripper.Set_Servo_Angle(180);
-  // gripper_two.Gripper_Set_Y_Location(1000);
+  // gripper_two.Gripper_Set_Y_Location(1325);
   // gripper_two.Gripper_Set_Z_Location(5);
   // servo_gripper.Set_Servo_Angle(80);
   // delay(300);
   // gripper_two.Gripper_Set_Z_Location(240);
   // gripper_two.Gripper_Set_Y_Location(1775);
-  // gripper_two.Gripper_Set_Z_Location(210);
+  // gripper_two.Gripper_Set_Z_Location(10,30);
   // servo_gripper.Set_Servo_Angle(180);
   // gripper_two.Gripper_Set_Z_Location(240);
 }

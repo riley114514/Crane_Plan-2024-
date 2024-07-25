@@ -231,9 +231,9 @@ public:
     {
         this->Gripper_Set_Y_Location(target_location);
         if(target_location == 1000)
-            this->Gripper_Set_Z_Location(110);
+            this->Gripper_Set_Z_Location(110,30);
         else
-            this->Gripper_Set_Z_Location(210);
+            this->Gripper_Set_Z_Location(210,30);
         this->servo->Set_Servo_Angle(180);
         delay(300);
         this->Gripper_Set_Z_Location(240);

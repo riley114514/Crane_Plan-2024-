@@ -85,6 +85,12 @@ void Task_Status_Check(void *prsm)
             break;
         }
 
+        case start_to_scan:
+        {
+            gripper_two.Gripper_Set_Y_Location(240);
+            gripper_two.Gripper_Status = move_stop;
+            break;
+        }
         default:
             break;
         }
