@@ -16,6 +16,7 @@ Status state_machine;
 void setup() {
   Serial.begin(115200);
   // delay(2000);
+  // Serial.begin(115200,SERIAL_8N1,34,35);
   esp_now_community.Esp_Now_Init();
   gripper_two.Gripper_Motor_Init(&steeping42_motor_1, &steeping42_motor_2, &Serial1, 25, 26);
   gripper_two.Gripper_Servo_Init(&servo_gripper, 0, 33);

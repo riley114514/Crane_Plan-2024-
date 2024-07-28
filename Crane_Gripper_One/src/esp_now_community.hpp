@@ -204,10 +204,10 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
                 break;
             }
         }
-        else if(receive_data[3] == 0x01)
+        else if(receive_data[3] == 0x04)
         {
             if(receive_data[4] == 0x11)
-                gripper_two.Gripper_Status = start_to_scan;
+                gripper_one.Gripper_Status = start_to_scan;
         }
     }
 }

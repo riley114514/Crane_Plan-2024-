@@ -148,7 +148,7 @@ public:
      * 
      * @return None
      */
-    void Send_Weight_Location() //6个砝码的坐标点存储
+    void Send_Weight_Location() 
     {
         uint8_t send_data[10]= {Header, Header, 10, NanoCommunity.location_buffer[0], NanoCommunity.location_buffer[1], NanoCommunity.location_buffer[2], NanoCommunity.location_buffer[3], 
                             NanoCommunity.location_buffer[4], NanoCommunity.location_buffer[5], Rear};
@@ -160,6 +160,8 @@ public:
 private:
     HardwareSerial *Esp_Now_Serial;
 };
+
+extern Esp_Now_Community esp_now_community;
 
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
@@ -180,7 +182,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     {
         if(receive_data[3] == 0x04 && receive_data[4] == 0x11)
         {
-            
+            esp_now_community.state = start_scan;
         }
     }
 

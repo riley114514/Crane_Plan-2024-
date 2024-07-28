@@ -57,7 +57,7 @@ public:
         Current_Z_Location = 250.0;
         Gripper_Status = 0;
         this->Gripper_Motor_Get_Location();
-        this->Gripper_Set_Z_Location(5);//机械爪初始化，到高度为5mm处
+        this->Gripper_Set_Z_Location(20);//机械爪初始化，到高度为5mm处
     }
 
     void Gripper_Servo_Init(Servo *sv, int servo_channel, int servo_pin)

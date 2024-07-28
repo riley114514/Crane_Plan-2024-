@@ -5,7 +5,7 @@
 #include "framework.hpp"
 #include "esp_now_community.hpp"
 
-void Task_Status_Check(void *prsm);
+void Status_Checking_Task(void *prsm);
 
 extern Esp_Now_Community esp_now_community;
 extern Framework framework;
@@ -36,10 +36,11 @@ public:
      */
     void State_Status_Check(void)
     {
-        xTaskCreatePinnedToCore(Task_Status_Check, "Task_Status_Check", 4096, this, 5, NULL, 0);
+        xTaskCreatePinnedToCore(Status_Checking_Task, "Crane_Init", 4096, this, 5, NULL, 0);
     }
 
     uint8_t Status;
+
 
 
 private:
@@ -56,35 +57,43 @@ private:
  *
  * @return None
  */
-void Task_Status_Check(void *prsm)
-{
+void Status_Checking_Task(void *prsm)
+{  
+
+
     Status *state_machine = (Status *)prsm;
     while (1)
     {
-        state_machine->Status = framework.Framework_Status;
-        switch (state_machine->Status)
-        {
+        // Serial2.println(state_machine->Status);
+        //  state_machine->Status = framework.Framework_Status;
+        // Serial2.println(state_machine->Status);
 
-        case move_stop:
+        Serial2.println(framework.Framework_Status);
+        if (state_machine->Status==move_stop)
         {
-            framework.Framework_Move_Stop();
-            if(digitalRead(27) == LOW)//左上角有一个总微动开关，摁下后启动线程
+                 framework.Framework_Move_Stop();
+            if(digitalRead(26) == LOW)//左上角有一个总微动开关，摁下后启动线程
             {
+                // while(digitalRead(34) == LOW)
+                // delay(1);
                 framework.Framework_Status = start_scan;
+                state_machine->Status = framework.Framework_Status;
+                Serial2.println(framework.Framework_Status);
             }
-            break;
         }
-
-        case start_scan:
+        else if (state_machine->Status==start_scan)
         {
-            esp_now_community.Gripper_Start_Scan();
+           
+
+                esp_now_community.Gripper_Start_Scan();
+                Serial2.println(2);
+            
             framework.Framework_Status = move_stop;
-            break;
+                // Serial2.println(1);
         }
-
-        case move_to_pick_location:
+        else if (state_machine->Status==move_to_pick_location)
         {
-            if(framework.Weight_Num == 3)//放置在圆圈中心的木桩
+             if(framework.Weight_Num == 3)
             {
                 framework.Pick_Num = 1;
                 esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight - 1]);
@@ -113,14 +122,10 @@ void Task_Status_Check(void *prsm)
                         framework.Framework_Status = move_stop;
                 }
             }
-
-            break;
-        }
-
-        case move_to_set_location:
+        }else if (state_machine->Status==move_to_set_location)
         {
-            framework.Frame_Set_Location(Set_Location[0][framework.Weight_Num]);
-            if(framework.Weight_Num == 3)//放中间
+             framework.Frame_Set_Location(Set_Location[0][framework.Weight_Num]);
+            if(framework.Weight_Num == 3)
             {
                 framework.Set_Num = 1;
                 esp_now_community.Gripper_One_Set(framework.Weight_Num);
@@ -132,15 +137,11 @@ void Task_Status_Check(void *prsm)
                 esp_now_community.Gripper_One_Set(framework.Weight_Num - 1);
             }
             framework.Framework_Status = move_stop;
-            break;
         }
-
-
-        default:
-            break;
-        }
-        delay(10);
+        delay(100);
     }
+
+
 }
 
 #endif

@@ -11,12 +11,15 @@ void setup()
     esp_now_community.Esp_Now_Send_Init();
     NanoCommunity.Communcation_Init(&Serial2,16,17);
     State_Machine.Status_Init();
+    // NanoCommunity.NANO_Send();
  }
 
 void loop() 
 {
 }
 
+
+//测试代码
 // #include <Arduino.h>
 // #include "community.hpp"
 
@@ -24,13 +27,13 @@ void loop()
 
 // void setup() 
 // {
+// Serial.begin(115200);
 // NanoCommunity.Communcation_Init(&Serial2,16,17);
 // NanoCommunity.NANO_Send();
-// NanoCommunity.ScaleIdentification();
+
 // }
 
 // void loop() 
 // {
-
 // }
 

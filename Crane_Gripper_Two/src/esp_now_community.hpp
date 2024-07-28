@@ -176,8 +176,11 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     /*
         编写执行功能函数，用于接收函数
     */
+   Serial.println(1);
     uint8_t receive_data[12];
     memcpy(&receive_data, incomingData, sizeof(receive_data));
+    
+
     if (receive_data[0] == Header && receive_data[1] == Header)
     {
         if (receive_data[3] == 0x01)
@@ -202,10 +205,13 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
                 break;
             }
         }
-        else if(receive_data[3] == 0x01)
+        else if(receive_data[3] == 0x04)
         {
             if(receive_data[4] == 0x11)
+             {
                 gripper_two.Gripper_Status = start_to_scan;
+    
+             }
         }
     }
 }

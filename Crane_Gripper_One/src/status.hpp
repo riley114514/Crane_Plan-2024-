@@ -5,7 +5,7 @@
 #include "gripper.hpp"
 #include "esp_now_community.hpp"
 
-extern Gripper gripper_two;
+extern Gripper gripper_one;
 extern Esp_Now_Community esp_now_community;
 void Task_Status_Check(void *prsm);
 
@@ -62,34 +62,37 @@ void Task_Status_Check(void *prsm)
     Status *state_machine = (Status *)prsm;
     while (1)
     {   
-        state_machine->Status = gripper_two.Gripper_Status;
+        state_machine->Status = gripper_one.Gripper_Status;
+
+
+        
         switch (state_machine->Status)
         {
         case move_stop:
         {
-            gripper_two.Gripper_Move_Stop();
+            gripper_one.Gripper_Move_Stop();
             break;
         }
 
         case start_to_pick:
         {
-            gripper_two.Gripper_Start_To_Pick(gripper_two.Pick_Location);
+            gripper_one.Gripper_Start_To_Pick(gripper_one.Pick_Location);
             esp_now_community.Framework_Move_To_Set_Location();
-            gripper_two.Gripper_Status = move_stop;
+            gripper_one.Gripper_Status = move_stop;
             break;
         }
 
         case start_to_set:
         {
-            gripper_two.Gripper_Start_To_Set(gripper_two.Set_Location);
-            gripper_two.Gripper_Status = move_stop;
+            gripper_one.Gripper_Start_To_Set(gripper_one.Set_Location);
+            gripper_one.Gripper_Status = move_stop;
             break;
         }
         
         case start_to_scan:
         {
-            gripper_two.Gripper_Set_Y_Location(240);
-            gripper_two.Gripper_Status = move_stop;
+            gripper_one.Gripper_Set_Z_Location(240);
+            gripper_one.Gripper_Status = move_stop;
             break;
         }
         default:
