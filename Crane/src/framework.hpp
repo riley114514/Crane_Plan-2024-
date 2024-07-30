@@ -92,7 +92,7 @@ public:
         this->Steeping42_Motor_2->Steeping_Init(slmotor, 2);
         this->Steeping42_Motor_1 = motor1;
         this->Steeping42_Motor_1->Steeping_Init(slmotor, 1);
-        // this->Frame_Back_To_Location();
+        this->Frame_Back_To_Location();
         this->Steeping42_Motor_1->Clear_All();
         this->Steeping42_Motor_2->Clear_All();
         Current_Location = 200;
@@ -104,6 +104,7 @@ public:
         Weight_Num = 5;
         pointer_weight = 6;
         this->Framework_Motor_Get_Location();
+        this->Frame_Set_Location(1550);
     }
 
     /**
@@ -189,13 +190,8 @@ public:
             this->Steeping42_Motor_2->Location_Mode_Cmd(1, speed, move_location);
         }
         this->Steeping42_Motor_2->Dual_Machine_Enable();
-        while (abs(target_location - this->Current_Location) > 1000)
-        {
-
-            Serial2.println(abs(this->Current_Location));
-            delay(10);
-
-        }
+        while (abs(target_location - this->Current_Location) > 3)
+            delay(1);
     }
 
 
@@ -220,7 +216,7 @@ public:
     uint8_t Set_Num;
     uint8_t Set_Finish_Num;
     uint8_t Weight_Num;
-    uint8_t Weight_Location[6];
+    uint8_t Weight_Location[6]= {0x11,0x21,0x23,0x51,0x52,0x53};
     int pointer_weight;
 
     HardwareSerial *Serialwork;
@@ -257,7 +253,7 @@ void Task_Get_Location(void *prfrk)
                                                                                    framework->Steeping42_Motor_1->Buffer[5] * pow(16, 2) + 
                                                                                    framework->Steeping42_Motor_1->Buffer[6]);
         }
-        framework->Current_Location = 200.0 + framework->Steeping42_Motor_1->Now_Location / 65536 * Trip_mm;
+        framework->Current_Location = 200.0 + framework->Steeping42_Motor_2->Now_Location / 65536 * Trip_mm;
         // Serial.printf("Now Laction is : %.2f m\n", chasis->Current_Location);
         // Serial.printf("Now Speed is : %.2f m\n", chasis->Current_Speed);
         delay(5);

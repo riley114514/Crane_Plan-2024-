@@ -279,15 +279,15 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
                 break;
             }
 
-            case 0x13:
-            {
-                for(int i = 0; i< 6; i++)
-                {
-                    framework.Weight_Location[i] = receive_data[i+5];
-                }
-                framework.Framework_Status = move_to_pick_location;
-                break;
-            }
+            // case 0x13:
+            // {
+            //     for(int i = 0; i< 6; i++)
+            //     {
+            //         framework.Weight_Location[i] = receive_data[i+5];
+            //     }
+            //     framework.Framework_Status = move_to_pick_location;
+            //     break;
+            // }
 
                 
             default:
