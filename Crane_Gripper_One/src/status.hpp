@@ -63,9 +63,6 @@ void Task_Status_Check(void *prsm)
     while (1)
     {   
         state_machine->Status = gripper_one.Gripper_Status;
-
-
-        
         switch (state_machine->Status)
         {
         case move_stop:
@@ -84,6 +81,7 @@ void Task_Status_Check(void *prsm)
 
         case start_to_set:
         {
+            //加横杆移动
             gripper_one.Gripper_Start_To_Set(gripper_one.Set_Location);
             gripper_one.Gripper_Status = move_stop;
             break;
@@ -91,6 +89,7 @@ void Task_Status_Check(void *prsm)
         
         case start_to_scan:
         {
+            
             gripper_one.Gripper_Set_Z_Location(240);
             gripper_one.Gripper_Status = move_stop;
             break;

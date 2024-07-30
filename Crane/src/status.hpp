@@ -61,21 +61,16 @@ void Status_Checking_Task(void *prsm)
     Status *state_machine = (Status *)prsm;
     while (1)
     {
-        // Serial2.println(state_machine->Status);
         state_machine->Status = framework.Framework_Status;
-        // Serial2.println(state_machine->Status);
 
-        // Serial2.println(framework.Framework_Status);
         if (state_machine->Status == move_stop)
         {
             framework.Framework_Move_Stop();
             if (digitalRead(27) == LOW) // 左上角有一个总微动开关，摁下后启动线程
             {
-                // while(digitalRead(34) == LOW)
-                // delay(1);
+
                 framework.Framework_Status = move_to_pick_location;
                 state_machine->Status = framework.Framework_Status;
-                // Serial2.println(framework.Framework_Status);
             }
         }
         else if (state_machine->Status == move_to_pick_location)
