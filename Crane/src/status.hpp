@@ -5,9 +5,10 @@
 #include "framework.hpp"
 #include "esp_now_community.hpp"
 
-void Status_Checking_Task(void *prsm);
+void Task_Status_Checking(void *prsm);
 
 extern Esp_Now_Community esp_now_community;
+extern ESP_Now_e eps_now_e;
 extern Framework framework;
 
 class Status
@@ -23,7 +24,6 @@ public:
      */
     void State_Init()
     {
-        this->Status = framework.Framework_Status;
         this->State_Status_Check();
     }
 
@@ -36,7 +36,7 @@ public:
      */
     void State_Status_Check(void)
     {
-        xTaskCreatePinnedToCore(Status_Checking_Task, "Crane_Init", 4096, this, 5, NULL, 0);
+        xTaskCreatePinnedToCore(Task_Status_Checking, "Task_Status_Checking", 4096, this, 5, NULL, 0);
     }
 
     uint8_t Status;
@@ -55,73 +55,90 @@ private:
  *
  * @return None
  */
-void Status_Checking_Task(void *prsm)
+void Task_Status_Checking(void *prsm)
 {
-
-    Status *state_machine = (Status *)prsm;
     while (1)
     {
-        state_machine->Status = framework.Framework_Status;
-
-        if (state_machine->Status == move_stop)
+        if (eps_now_e.framework_next_state == framework_next_stop)
         {
-            framework.Framework_Move_Stop();
-            if (digitalRead(27) == LOW) // 左上角有一个总微动开关，摁下后启动线程
+            if (digitalRead(Start_Button) == LOW)
             {
-
-                framework.Framework_Status = move_to_pick_location;
-                state_machine->Status = framework.Framework_Status;
+                eps_now_e.framework_next_state = framework_next_pick_start;
+                eps_now_e.gripper_one_next_state = gripper_one_next_start_scan;
+                eps_now_e.gripper_two_next_state = gripper_two_next_start_scan;
+                esp_now_community.Send_Message();
+                delay(10000);
             }
         }
-        else if (state_machine->Status == move_to_pick_location)
+        else if (eps_now_e.framework_next_state == framework_next_pick_start)
         {
-            if (framework.Weight_Num == 3)
+            framework.Frame_Set_Location(Weight_Location_X[eps_now_e.weight_num[eps_now_e.weight_pointer] / 16 - 1][eps_now_e.weight_num[eps_now_e.weight_pointer] % 16 - 1]);
+            if (eps_now_e.weight_pointer == 3)
             {
-                framework.Pick_Num = 1;
-                esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight - 1]);
-                framework.pointer_weight -= 1;
-                framework.Framework_Status = move_stop;
+                eps_now_e.gripper_one_pick_num = eps_now_e.weight_num[eps_now_e.weight_pointer];
+                eps_now_e.gripper_one_next_state = gripper_one_next_pick_start;
+                eps_now_e.weight_pointer -= 1;
             }
             else
             {
-                if (framework.Weight_Location[framework.pointer_weight] / 16 == framework.Weight_Location[framework.pointer_weight - 1] / 16)
+                if (eps_now_e.weight_pointer % 2 == 1)
                 {
-                    framework.Pick_Num = 2;
-                    esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight]);
-                    esp_now_community.Gripper_Two_Work(framework.Weight_Location[framework.pointer_weight - 1]);
-                    framework.Framework_Status = move_stop;
-                    framework.pointer_weight -= 2;
+                    if (eps_now_e.weight_num[eps_now_e.weight_pointer] / 16 == eps_now_e.weight_num[eps_now_e.weight_pointer] / 16)
+                    {
+                        eps_now_e.gripper_one_pick_num = eps_now_e.weight_num[eps_now_e.weight_pointer];
+                        eps_now_e.gripper_one_next_state = gripper_one_next_pick_start;
+                        eps_now_e.gripper_two_pick_num = eps_now_e.weight_num[eps_now_e.weight_pointer - 1];
+                        eps_now_e.gripper_two_next_state = gripper_two_next_pick_start;
+                        eps_now_e.weight_pointer -= 2;
+                    }
+                    else
+                    {
+                        eps_now_e.gripper_one_pick_num = eps_now_e.weight_num[eps_now_e.weight_pointer];
+                        eps_now_e.gripper_one_next_state = gripper_one_next_pick_start;
+                        eps_now_e.weight_pointer -= 1;
+                    }
                 }
                 else
                 {
-                    if (framework.Pick_Num % 2 == 0)
-                        esp_now_community.Gripper_One_Work(framework.Weight_Location[framework.pointer_weight]);
-                    else
-                        esp_now_community.Gripper_Two_Work(framework.Weight_Location[framework.pointer_weight - 1]);
-                    framework.Pick_Num++;
-                    framework.pointer_weight -= 1;
-                    if (framework.Pick_Num % 2 == 0)
-                        framework.Framework_Status = move_stop;
+                    eps_now_e.gripper_two_pick_num = eps_now_e.weight_num[eps_now_e.weight_pointer - 1];
+                    eps_now_e.gripper_two_next_state = gripper_two_next_pick_start;
+                    eps_now_e.weight_pointer -= 1;
                 }
             }
+            eps_now_e.framework_next_state = framework_next_pick_finish;
+            esp_now_community.Send_Message();
         }
-        else if (state_machine->Status == move_to_set_location)
+        else if (eps_now_e.framework_next_state == framework_next_set_start)
         {
-            framework.Frame_Set_Location(Set_Location[0][framework.Weight_Num]);
-            if (framework.Weight_Num == 3)
+            framework.Frame_Set_Location(Set_Location_X[eps_now_e.set_pointer]);
+            if (eps_now_e.set_pointer != 1)
             {
-                framework.Set_Num = 1;
-                esp_now_community.Gripper_One_Set(framework.Weight_Num);
+                if(eps_now_e.set_pointer == 2)
+                {
+                    eps_now_e.gripper_one_next_state = gripper_one_next_set_start;
+                    eps_now_e.gripper_one_set_num = 4;
+                    eps_now_e.gripper_two_next_state = gripper_two_next_set_start;
+                    eps_now_e.gripper_one_set_num = 3;
+                }
+                else
+                {
+                    eps_now_e.gripper_one_next_state = gripper_one_next_set_start;
+                    eps_now_e.gripper_one_set_num = 1;
+                    eps_now_e.gripper_two_next_state = gripper_two_next_set_start;
+                    eps_now_e.gripper_one_set_num = 0;
+                }
+
             }
             else
             {
-                framework.Set_Num = 2;
-                esp_now_community.Gripper_Two_Set(framework.Weight_Num);
-                esp_now_community.Gripper_One_Set(framework.Weight_Num - 1);
+                eps_now_e.gripper_one_next_state = gripper_one_next_set_start;
+                eps_now_e.gripper_one_set_num = eps_now_e.set_pointer * 2;
             }
-            framework.Framework_Status = move_stop;
+            eps_now_e.set_pointer -= 1;
+            eps_now_e.framework_next_state = framework_next_set_finish;
+            esp_now_community.Send_Message();
         }
-        delay(100);
+        delay(50);
     }
 }
 
