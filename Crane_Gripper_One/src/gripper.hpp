@@ -2,27 +2,23 @@
 #define __GRIPPER_HPP
 
 #include <Arduino.h>
-#include "steeping42.hpp"
+#include "EMMC42V53.hpp"
 #include "servo.hpp"
 
-float Weight_Location_X[18] = {2000, 0, 0,
-                               2375, 2375, 2375,
-                               2562.5, 2562.5, 0,
-                               2937.5, 2937.5, 0,
-                               3125, 3125, 3125,
-                               500, 0, 0};
-float Weight_Location_Y[18] = {1000, 0, 0,
+#define Motor_2_Button  12
+#define Motor_1_Button  13
+
+
+float Weight_Location_Y[6][3] = {1000, 0, 0,
                                1650, 1000, 350,
                                1325, 675, 0,
                                1325, 675, 0,
                                1650, 1000, 350,
                                1000, 0, 0};
 
-float Set_Location[2][5] = {245,245,1750,3755,3755,
-                            245,1755,1000,245,1755};
+float Set_Location_Y[5] = {245,1755,1000,245,1755};
                             
 void Task_Get_Location(void *prfrk);
-
 
 class Gripper
 {
@@ -38,32 +34,31 @@ public:
      * 
      * @return None
      */
-    void Gripper_Motor_Init(Steeping42 *motor1, Steeping42 *motor2, HardwareSerial *slmotor, int rx, int tx)
+    void Gripper_Motor_Init(EMMC423V53 *motor1, EMMC423V53 *motor2, HardwareSerial *slmotor, int rx, int tx)
     {
         slmotor->begin(115200,SERIAL_8N1,rx,tx);
-        pinMode(12,INPUT_PULLUP);
-        pinMode(13,INPUT_PULLUP);
+        pinMode(Motor_2_Button,INPUT_PULLUP);
+        pinMode(Motor_1_Button,INPUT_PULLUP);
 
-        this->Steeping42_Motor_2 = motor2;
-        this->Steeping42_Motor_2->Steeping_Init(slmotor, 2);
-        this->Steeping42_Motor_1 = motor1;
-        this->Steeping42_Motor_1->Steeping_Init(slmotor, 1);
+        this->Motor_2 = motor2;
+        this->Motor_2->Steeping_Init(slmotor, 2);
+        this->Motor_1 = motor1;
+        this->Motor_1->Steeping_Init(slmotor, 1);
 
         this->Gripper_Back_To_Location();
-        this->Steeping42_Motor_1->Clear_All();
-        this->Steeping42_Motor_2->Clear_All();
+        this->Motor_1->Clear_All();
+        this->Motor_2->Clear_All();
         Current_Y_Location = 110.0;
         Current_Z_Location = 250.0;
-        Gripper_Status = 0;
         this->Gripper_Motor_Get_Location();
-        this->Gripper_Set_Z_Location(20);//机械爪初始化，到高度为5mm处
-
+        this->Gripper_Set_Z_Location(10,30);//机械爪初始化，到高度为5mm处
     }
 
     void Gripper_Servo_Init(Servo *sv, int servo_channel, int servo_pin)
     {
         this->servo = sv;
         this->servo->Servo_Init(servo_channel,servo_pin);
+        this->servo->Set_Servo_Angle(130);
     }
     /**
      * @brief 控制机械爪Y方向上的电机运动 ： 采用速度模式 主要用于启动复位和寻找砝码时使用
@@ -75,9 +70,9 @@ public:
     void Gripper_Move_Left(uint16_t rpm)
     {
 
-        this->Steeping42_Motor_1->Speed_Mode_Cmd(0, rpm, 0);
+        this->Motor_1->Speed_Mode_Cmd(0, rpm, 0);
 
-        this->Steeping42_Motor_1->Dual_Machine_Enable();
+        this->Motor_1->Dual_Machine_Enable();
     }
 
     /**
@@ -90,9 +85,9 @@ public:
     void Gripper_Move_Right(uint16_t rpm)
     {
 
-        this->Steeping42_Motor_1->Speed_Mode_Cmd(1, rpm, 0);
+        this->Motor_1->Speed_Mode_Cmd(1, rpm, 0);
 
-        this->Steeping42_Motor_1->Dual_Machine_Enable();
+        this->Motor_1->Dual_Machine_Enable();
     }
 
     /**
@@ -105,8 +100,8 @@ public:
     void Gripper_Move_Up(uint16_t rpm)
     {
 
-        this->Steeping42_Motor_2->Speed_Mode_Cmd(0., rpm, 0);
-        this->Steeping42_Motor_2->Dual_Machine_Enable();
+        this->Motor_2->Speed_Mode_Cmd(0., rpm, 0);
+        this->Motor_2->Dual_Machine_Enable();
     }
 
     /**
@@ -119,8 +114,8 @@ public:
     void Gripper_Move_Down(uint16_t rpm)
     {
 
-        this->Steeping42_Motor_2->Speed_Mode_Cmd(1, rpm, 0);
-        this->Steeping42_Motor_2->Dual_Machine_Enable();
+        this->Motor_2->Speed_Mode_Cmd(1, rpm, 0);
+        this->Motor_2->Dual_Machine_Enable();
     }
 
     /**
@@ -134,18 +129,18 @@ public:
     {
 
         this->Gripper_Move_Up(30);
-        while(digitalRead(12) != LOW)
+        while(digitalRead(Motor_2_Button) != LOW)
         {
             delay(1);
         };
-        this->Steeping42_Motor_2->Stop_Instance();
+        this->Motor_2->Stop_Instance();
 
         this->Gripper_Move_Right(30);
-        while( digitalRead(13) != LOW)
+        while( digitalRead(Motor_1_Button) != LOW)
         {
             delay(1);
         };
-        this->Steeping42_Motor_1->Stop_Instance();
+        this->Motor_1->Stop_Instance();
 
         // this->Steeping42_Motor_2->Motor_Disable_Cmd();
         // this->Steeping42_Motor_1->Motor_Disable_Cmd();
@@ -162,30 +157,30 @@ public:
      * 
      * @return None
      */
-    void Gripper_Set_Y_Location(int target_y_location, int speed = 180)
+    void Gripper_Set_Y_Location(int target_y_location, int speed = 30)
     {
         float move_location = fabs(target_y_location - this->Current_Y_Location);
 
         if(target_y_location >= this->Current_Y_Location)
-            this->Steeping42_Motor_1->Location_Mode_Cmd(0, speed, move_location, Trip_mm);
+            this->Motor_1->Location_Mode_Cmd(0, speed, move_location, Trip_mm);
         else
-            this->Steeping42_Motor_1->Location_Mode_Cmd(1, speed, move_location, Trip_mm);
+            this->Motor_1->Location_Mode_Cmd(1, speed, move_location, Trip_mm);
 
-        this->Steeping42_Motor_1->Dual_Machine_Enable();
+        this->Motor_1->Dual_Machine_Enable();
         while (abs(target_y_location - this->Current_Y_Location) > 3)
             delay(1);
     }
 
-    void Gripper_Set_Z_Location(int target_z_location, int speed = 180)
+    void Gripper_Set_Z_Location(int target_z_location, int speed = 30)
     {
         float move_location = fabs(target_z_location - this->Current_Z_Location);
 
         if(target_z_location >= this->Current_Z_Location)
-            this->Steeping42_Motor_2->Location_Mode_Cmd(0, speed, move_location, 0, Height_mm);
+            this->Motor_2->Location_Mode_Cmd(0, speed, move_location, 0, Height_mm);
         else
-            this->Steeping42_Motor_2->Location_Mode_Cmd(1, speed, move_location, 0, Height_mm);
+            this->Motor_2->Location_Mode_Cmd(1, speed, move_location, 0, Height_mm);
 
-        this->Steeping42_Motor_2->Dual_Machine_Enable();
+        this->Motor_2->Dual_Machine_Enable();
         while (abs(target_z_location - this->Current_Z_Location) > 3)
             delay(1);
     }
@@ -199,8 +194,8 @@ public:
      */
     void Gripper_Move_Stop()
     {
-        this->Steeping42_Motor_1->Stop_Instance();
-        this->Steeping42_Motor_2->Stop_Instance();
+        this->Motor_1->Stop_Instance();
+        this->Motor_2->Stop_Instance();
     }
 
     /**
@@ -254,14 +249,12 @@ public:
         xTaskCreatePinnedToCore(Task_Get_Location, "Task_Get_Location_And_Speed", 4096, this, 5, NULL, 0);
     }
 
-    Steeping42 *Steeping42_Motor_1;
-    Steeping42 *Steeping42_Motor_2;
+    EMMC423V53 *Motor_1;
+    EMMC423V53 *Motor_2;
     float Current_Y_Location;
     float Current_Z_Location;
-    uint8_t Gripper_Status;
     Servo *servo;
-    int Pick_Location;
-    int Set_Location;
+
 private:
     /* data */
 };
@@ -278,25 +271,25 @@ void Task_Get_Location(void *prfrk)
     Gripper *gripper = (Gripper *)prfrk;
     while (1)
     {
-        gripper->Steeping42_Motor_1->Read_Instance_Location();
-        gripper->Steeping42_Motor_2->Read_Instance_Location();
-        if (gripper->Steeping42_Motor_2->Buffer[0] == gripper->Steeping42_Motor_2->ID && gripper->Steeping42_Motor_2->Buffer[1] == 0x36)
+        gripper->Motor_1->Read_Instance_Location();
+        gripper->Motor_2->Read_Instance_Location();
+        if (gripper->Motor_2->Buffer[0] == gripper->Motor_2->ID && gripper->Motor_2->Buffer[1] == 0x36)
         {
-            gripper->Steeping42_Motor_2->Now_Location = (gripper->Steeping42_Motor_2->Buffer[2] ? -1 : 1) * (gripper->Steeping42_Motor_2->Buffer[3] * pow(16, 6) +
-                                                                                   gripper->Steeping42_Motor_2->Buffer[4] * pow(16, 4) + 
-                                                                                   gripper->Steeping42_Motor_2->Buffer[5] * pow(16, 2) + 
-                                                                                   gripper->Steeping42_Motor_2->Buffer[6]);
+            gripper->Motor_2->Now_Location = (gripper->Motor_2->Buffer[2] ? -1 : 1) * (gripper->Motor_2->Buffer[3] * pow(16, 6) +
+                                                                                   gripper->Motor_2->Buffer[4] * pow(16, 4) + 
+                                                                                   gripper->Motor_2->Buffer[5] * pow(16, 2) + 
+                                                                                   gripper->Motor_2->Buffer[6]);
         }
-        if (gripper->Steeping42_Motor_1->Buffer[0] == gripper->Steeping42_Motor_1->ID && gripper->Steeping42_Motor_1->Buffer[1] == 0x36)
+        if (gripper->Motor_1->Buffer[0] == gripper->Motor_1->ID && gripper->Motor_1->Buffer[1] == 0x36)
         {
-            gripper->Steeping42_Motor_1->Now_Location = (gripper->Steeping42_Motor_1->Buffer[2] ? -1 : 1) * (gripper->Steeping42_Motor_1->Buffer[3] * pow(16, 6) +
-                                                                                   gripper->Steeping42_Motor_1->Buffer[4] * pow(16, 4) + 
-                                                                                   gripper->Steeping42_Motor_1->Buffer[5] * pow(16, 2) + 
-                                                                                   gripper->Steeping42_Motor_1->Buffer[6]);
+            gripper->Motor_1->Now_Location = (gripper->Motor_1->Buffer[2] ? -1 : 1) * (gripper->Motor_1->Buffer[3] * pow(16, 6) +
+                                                                                   gripper->Motor_1->Buffer[4] * pow(16, 4) + 
+                                                                                   gripper->Motor_1->Buffer[5] * pow(16, 2) + 
+                                                                                   gripper->Motor_1->Buffer[6]);
         }
         // 暂定，需要看是左侧还是右侧电机去区别
-        gripper->Current_Y_Location = 110.0 + gripper->Steeping42_Motor_1->Now_Location / 65536 * Trip_mm;
-        gripper->Current_Z_Location = 250.0 + gripper->Steeping42_Motor_2->Now_Location / 65536 * Height_mm;
+        gripper->Current_Y_Location = 110.0 + gripper->Motor_1->Now_Location / 65536 * Trip_mm;
+        gripper->Current_Z_Location = 250.0 + gripper->Motor_2->Now_Location / 65536 * Height_mm;
 
 
         // Serial.println(gripper->Current_Z_Location);

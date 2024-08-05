@@ -1,43 +1,26 @@
 #include <Arduino.h>
 
-#include "steeping42.hpp"
+#include "EMMC42V53.hpp"
 #include "gripper.hpp"
 #include "esp_now_community.hpp"
 #include "status.hpp"
 #include "servo.hpp"
 
+ESP_Now_e eps_now_e;
 Esp_Now_Community esp_now_community;
-Steeping42 steeping42_motor_1;
-Steeping42 steeping42_motor_2;
+EMMC423V53 motor_1;
+EMMC423V53 motor_2;
 Gripper gripper_one;
 Status state_machine;
 Servo servo_gripper;
 
 void setup() {
   Serial.begin(115200);
-  // // delay(2000);
   esp_now_community.Esp_Now_Init();//STATE初始化必须在motor_init后面
-  gripper_one.Gripper_Motor_Init(&steeping42_motor_1, &steeping42_motor_2, &Serial1, 25, 26);
+  gripper_one.Gripper_Motor_Init(&motor_1, &motor_2, &Serial1, 25, 26);
   gripper_one.Gripper_Servo_Init(&servo_gripper, 0, 33);
   state_machine.State_Init();
 
-
-  // servo_gripper.Servo_Init(0,33);
-  // servo_gripper.Set_Servo_Angle(150);
-  // gripper_one.Gripper_Set_Y_Location(1000);
-  // gripper_one.Gripper_Set_Z_Location(5);
-  // servo_gripper.Set_Servo_Angle(80);
-  // delay(300);
-  // gripper_one.Gripper_Set_Z_Location(240);
-  // gripper_one.Gripper_Set_Y_Location(245);
-  // gripper_one.Gripper_Set_Z_Location(10,30);
-  // servo_gripper.Set_Servo_Angle(150);
-  // gripper_one.Gripper_Set_Z_Location(240);
-
-  // steeping42_motor_2.Steeping_Init(&Serial1,1,25,26);
-  // steeping42_motor_2.Speed_Mode_Cmd(1,60,0,false);
-  // delay(1000);
-  // steeping42_motor_2.Stop_Instance();
 
 }
 

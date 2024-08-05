@@ -5,15 +5,11 @@
 #include "gripper.hpp"
 #include "esp_now_community.hpp"
 
-extern Gripper gripper_one;
+void Task_Status_Checking(void *prsm);
+
 extern Esp_Now_Community esp_now_community;
-void Task_Status_Check(void *prsm);
-
-
-// 状态机的状态表示声明
-#define move_stop 0
-#define start_to_pick 1
-#define start_to_set 2
+extern ESP_Now_e eps_now_e;
+extern Gripper gripper_one;
 
 class Status
 {
@@ -28,7 +24,6 @@ public:
      */
     void State_Init()
     {
-        this->Status = move_stop;
         this->State_Status_Check();
     }
 
@@ -41,8 +36,9 @@ public:
      */
     void State_Status_Check(void)
     {
-        xTaskCreatePinnedToCore(Task_Status_Check, "Task_Status_Check", 4096, this, 5, NULL, 0);
+        xTaskCreatePinnedToCore(Task_Status_Checking, "Task_Status_Checking", 4096, this, 5, NULL, 0);
     }
+
     uint8_t Status;
 
 private:
@@ -51,53 +47,77 @@ private:
 
 /**
  * @brief 状态机状态查询任务函数，根据当前状态执行不同功能
+ *        注：需要通过nano来决定抓几个，然后传回状态机决定几个机械爪去夹取
+ *        注：在每次夹取完成后，查询还剩几个砝码需要抓取，如果抓取完毕，则停止工作，否则继续跟nano通信开始扫描
  *
  * @param prs, = prsm为将 State 类型 转变为 void 类型的指针，
  *       需要在函数里再将prst转变为 State 类型
  *
  * @return None
  */
-void Task_Status_Check(void *prsm)
+void Task_Status_Checking(void *prsm)
 {
-    Status *state_machine = (Status *)prsm;
     while (1)
-    {   
-        state_machine->Status = gripper_one.Gripper_Status;
-        switch (state_machine->Status)
+    {
+        if (eps_now_e.gripper_one_next_state == gripper_one_next_start_scan)
         {
-        case move_stop:
-        {
-            gripper_one.Gripper_Move_Stop();
-            break;
-        }
-
-        case start_to_pick:
-        {
-            gripper_one.Gripper_Start_To_Pick(gripper_one.Pick_Location);
-            esp_now_community.Framework_Move_To_Set_Location();
-            gripper_one.Gripper_Status = move_stop;
-            break;
-        }
-
-        case start_to_set:
-        {
-            //加横杆移动
-            gripper_one.Gripper_Start_To_Set(gripper_one.Set_Location);
-            gripper_one.Gripper_Status = move_stop;
-            break;
-        }
-        
-        case start_to_scan:
-        {
-            
             gripper_one.Gripper_Set_Z_Location(240);
-            gripper_one.Gripper_Status = move_stop;
-            break;
+            gripper_one.Gripper_Set_Y_Location(200);
+            eps_now_e.gripper_one_next_state == gripper_one_next_stop;
+            esp_now_community.Send_Message();
         }
-        default:
-            break;
+        else if (eps_now_e.gripper_one_next_state == gripper_one_next_pick_start)
+        {
+            gripper_one.Gripper_Set_Y_Location(Weight_Location_Y[eps_now_e.gripper_one_pick_num / 16 - 1][eps_now_e.gripper_one_pick_num % 16 - 1]);
+            gripper_one.servo->Set_Servo_Angle(130);
+            gripper_one.Gripper_Set_Z_Location(5);
+            gripper_one.servo->Set_Servo_Angle(80);
+            delay(500);
+            gripper_one.Gripper_Set_Z_Location(240);
+            if(eps_now_e.weight_pointer != 2)
+            {
+                gripper_one.Gripper_Set_Y_Location(245);
+            }
+            else
+            {
+                gripper_one.Gripper_Set_Y_Location(1000);
+            }
+            eps_now_e.gripper_one_next_state = gripper_one_next_pick_finish;
+            if(eps_now_e.gripper_one_next_state == gripper_one_next_pick_finish && eps_now_e.gripper_two_next_state == gripper_two_next_pick_finish)
+                eps_now_e.framework_next_state = framework_next_set_start;
+            esp_now_community.Send_Message();
         }
-        delay(10);
+        else if (eps_now_e.gripper_one_next_state == gripper_one_next_set_start)
+        {
+            if(eps_now_e.set_pointer == 0)
+            {
+                gripper_one.Gripper_Set_Z_Location(110);
+                gripper_one.servo->Set_Servo_Angle(130);
+                delay(500);
+                gripper_one.Gripper_Set_Z_Location(240);
+                gripper_one.Gripper_Set_Y_Location(200);
+                eps_now_e.framework_next_state = framework_next_pick_start;
+            }
+            else
+            {
+                gripper_one.Gripper_Set_Z_Location(210);
+                gripper_one.servo->Set_Servo_Angle(130);
+                delay(500);
+                gripper_one.Gripper_Set_Z_Location(240);
+                gripper_one.Gripper_Set_Y_Location(200);
+            }
+
+            eps_now_e.gripper_one_next_state = gripper_one_next_set_finish;
+            if(eps_now_e.gripper_one_next_state == gripper_one_next_set_finish && eps_now_e.gripper_two_next_state == gripper_two_next_set_finish)
+            {
+                if(eps_now_e.set_pointer == 1)
+                {
+                    eps_now_e.framework_next_state = framework_next_pick_start;
+                }
+            }
+            esp_now_community.Send_Message();
+        }
+        delay(50);
     }
 }
 
