@@ -4,33 +4,62 @@
 #include <Arduino.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#include "community.hpp"
 
-extern Community NanoCommunity;
+typedef enum
+{
+  framework_next_stop = 0,
+  framework_next_start_scan,
+  framework_next_pick_start,
+  framework_next_pick_finish,
+  framework_next_set_start,
+  framework_next_set_finish,
+}Framework_Next_Status;
 
+typedef enum
+{
+  gripper_one_next_stop = 0,
+  gripper_one_next_start_scan,
+  gripper_one_next_pick_start,
+  gripper_one_next_pick_finish,
+  gripper_one_next_set_start,
+  gripper_one_next_set_finish,
+}Gripper_One_Next_Status;
 
-#define Header 0x55
-#define Rear 0x6B
+typedef enum
+{
+  gripper_two_next_stop = 0,
+  gripper_two_next_start_scan,
+  gripper_two_next_pick_start,
+  gripper_two_next_pick_finish,
+  gripper_two_next_set_start,
+  gripper_two_next_set_finish,
+}Gripper_Two_Next_Status;
 
+//用于测试的数据
+typedef struct __ESP_Now_e{
+  Framework_Next_Status framework_next_state;
+  Gripper_One_Next_Status gripper_one_next_state;
+  Gripper_Two_Next_Status gripper_two_next_state;
+  uint8_t weight_num[6];
+  uint8_t gripper_one_pick_num;
+  uint8_t gripper_one_set_num;
+  uint8_t gripper_two_pick_num;
+  uint8_t gripper_two_set_num;
+  uint8_t weight_pointer = 5;
+  uint8_t set_pointer = 2;
+} ESP_Now_e;
+
+extern ESP_Now_e eps_now_e;
 
 // uint8_t broadcastAddress_1[] = {0xC8, 0x2E, 0x18, 0xF7, 0x53, 0xE8};
 uint8_t broadcastAddress_F[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // 广播模式
 esp_now_peer_info_t peerInfo;
-
-
-typedef enum
-{
-    move_stop = 0,
-    start_scan,
-    trans_location
-}State;
 
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
 
 class Esp_Now_Community
 {
-
 public:
     /**
      * @brief esp_now 初始化
@@ -39,15 +68,13 @@ public:
      * 
      * @return None
      */
-    void Esp_Now_Send_Init()
+    void Esp_Now_Init()
     {
-        this->Esp_Now_Serial = &Serial;
-        this->Esp_Now_Serial->begin(115200);
         WiFi.mode(WIFI_STA);
 
         if (esp_now_init() != ESP_OK)
         {
-            this->Esp_Now_Serial->println("Error initializing ESP-NOW");
+            // Serial.println("Error initializing ESP-NOW");
             return;
         }
 
@@ -60,64 +87,13 @@ public:
 
         if (esp_now_add_peer(&peerInfo) != ESP_OK)
         {
-            this->Esp_Now_Serial->println("Failed to add peer");
+            // Serial.println("Failed to add peer");
             return;
         }
-        state = move_stop;
+        eps_now_e.framework_next_state = framework_next_start_scan;
+        eps_now_e.gripper_one_next_state = gripper_one_next_stop;
+        eps_now_e.gripper_two_next_state = gripper_two_next_stop;
     }
-
-    void Esp_Now_Send_Init(HardwareSerial *sl)
-    {
-        this->Esp_Now_Serial = sl;
-        this->Esp_Now_Serial->begin(115200);
-        WiFi.mode(WIFI_STA);
-
-        if (esp_now_init() != ESP_OK)
-        {
-            this->Esp_Now_Serial->println("Error initializing ESP-NOW");
-            return;
-        }
-
-        esp_now_register_send_cb(onDataSent);
-        esp_now_register_recv_cb(OnDataRecv);
-
-        memcpy(peerInfo.peer_addr, broadcastAddress_F, 6);
-        peerInfo.channel = 0;
-        peerInfo.encrypt = false;
-
-        if (esp_now_add_peer(&peerInfo) != ESP_OK)
-        {
-            this->Esp_Now_Serial->println("Failed to add peer");
-            return;
-        }
-    }
-
-    void Esp_Now_Send_Init(HardwareSerial *sl, uint8_t rx, uint8_t tx)
-    {
-        this->Esp_Now_Serial = sl;
-        this->Esp_Now_Serial->begin(115200, SERIAL_8N1, rx, tx);
-        WiFi.mode(WIFI_STA);
-
-        if (esp_now_init() != ESP_OK)
-        {
-            this->Esp_Now_Serial->println("Error initializing ESP-NOW");
-            return;
-        }
-
-        esp_now_register_send_cb(onDataSent);
-        esp_now_register_recv_cb(OnDataRecv);
-
-        memcpy(peerInfo.peer_addr, broadcastAddress_F, 6);
-        peerInfo.channel = 0;
-        peerInfo.encrypt = false;
-
-        if (esp_now_add_peer(&peerInfo) != ESP_OK)
-        {
-            this->Esp_Now_Serial->println("Failed to add peer");
-            return;
-        }
-    }
-
     /**
      * @brief 发送函数，向两个机械爪发送指令
      * 
@@ -125,43 +101,24 @@ public:
      * 
      * @return None
      */
-    // void Send_Message()
-    // {
-    //     String myData = "Send Message";
-    //     esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&myData, sizeof(myData));
-
-    //     // if (result == ESP_OK)
-    //     // {
-    //     //     Serial.println("Send with success");
-    //     // }
-    //     // else
-    //     // {
-    //     //     Serial.println("Error sending the data");
-    //     // }
-    // }
-
-    /**
-     * @brief 机械爪启动后复位函数,先让爪子上升，并向两侧复位，
-     *        （然后滑杆开始复位，再让爪子下降）这是后面的两个函数
-     * 
-     * @param 无
-     * 
-     * @return None
-     */
-    void Send_Weight_Location() 
+    void Send_Message()
     {
-        uint8_t send_data[10]= {Header, Header, 10, NanoCommunity.location_buffer[0], NanoCommunity.location_buffer[1], NanoCommunity.location_buffer[2], NanoCommunity.location_buffer[3], 
-                            NanoCommunity.location_buffer[4], NanoCommunity.location_buffer[5], Rear};
-        esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&send_data, sizeof(send_data));
+        esp_err_t result = esp_now_send(broadcastAddress_F, (uint8_t *)&eps_now_e, sizeof(eps_now_e));
+        // if (result == ESP_OK)
+        // {
+        //     Serial.println("Send with success");
+        // }
+        // else
+        // {
+        //     Serial.println("Error sending the data");
+        // }
     }
 
-    State state;
 
-private:
-    HardwareSerial *Esp_Now_Serial;
+
+// private:
+
 };
-
-extern Esp_Now_Community esp_now_community;
 
 void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
@@ -176,16 +133,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     /*
         编写执行功能函数，用于接收函数
     */
-    uint8_t receive_data[12];
-    memcpy(&receive_data, incomingData, sizeof(receive_data));
-    if(receive_data[0] == Header && receive_data[1] == Header)
-    {
-        if(receive_data[3] == 0x04 && receive_data[4] == 0x11)
-        {
-            esp_now_community.state = start_scan;
-        }
-    }
-
+    memcpy(&eps_now_e, incomingData, sizeof(eps_now_e));
 }
 
 #endif

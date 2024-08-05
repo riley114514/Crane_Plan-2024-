@@ -1,21 +1,25 @@
 #include <Arduino.h>
-#include "community.hpp"
 #include "esp_now_community.hpp"
 #include "status.hpp"
+#include "uart.hpp"
 
 Esp_Now_Community esp_now_community;
-Community NanoCommunity;
 Status State_Machine;
+Uart uart_with_nano;
+ESP_Now_e eps_now_e;
+
 void setup() 
 {
-    esp_now_community.Esp_Now_Send_Init();
-    NanoCommunity.Communcation_Init(&Serial2,16,17);
-    State_Machine.Status_Init();
-    // NanoCommunity.NANO_Send();
+    Serial.begin(115200);
+    uart_with_nano.Uart_Init(&Serial2);
+    esp_now_community.Esp_Now_Init();
+    State_Machine.State_Init();
  }
 
 void loop() 
 {
+    // NanoCommunity.NANO_Send();
+    // delay(1000);
 }
 
 
